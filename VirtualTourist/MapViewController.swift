@@ -77,7 +77,6 @@ extension MapViewController: MKMapViewDelegate {
 			annotationView = view
 		} else {
 			annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: ANNOTATION_VIEW_IDENTIFIER)
-			annotationView.draggable = true
 		}
 		return annotationView
 	}
