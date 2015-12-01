@@ -12,6 +12,20 @@ import CoreData
 
 class Photo: NSManagedObject {
 
-// Insert code here to add functionality to your managed object subclass
+	override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
+		super.init(entity: entity, insertIntoManagedObjectContext: context)
+	}
+
+	init(pin: Pin, info: [String: AnyObject], managedObjectContext context: NSManagedObjectContext) {
+		let entity = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)!
+		super.init(entity: entity, insertIntoManagedObjectContext: context)
+
+
+		self.pin = pin
+		self.flickrID = String(info["id"] as! Int)
+		if let title = info["title"] as? String {
+			self.title = title
+		}
+	}
 
 }
