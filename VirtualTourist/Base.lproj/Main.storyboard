@@ -23,6 +23,8 @@
                             </mapView>
                         </subviews>
                         <animations/>
+                        <color key="backgroundColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                        <color key="tintColor" red="0.1215686275" green="0.12941176469999999" blue="0.14117647059999999" alpha="1" colorSpace="calibratedRGB"/>
                         <constraints>
                             <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="D0F-Bo-QnJ" secondAttribute="bottom" id="P4y-oY-bgd"/>
                             <constraint firstAttribute="trailing" secondItem="D0F-Bo-QnJ" secondAttribute="trailing" id="SVJ-OE-7h9"/>
@@ -30,6 +32,7 @@
                             <constraint firstItem="D0F-Bo-QnJ" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="wPn-Hq-0oT"/>
                         </constraints>
                     </view>
+                    <simulatedStatusBarMetrics key="simulatedStatusBarMetrics" statusBarStyle="lightContent"/>
                     <connections>
                         <outlet property="mapView" destination="D0F-Bo-QnJ" id="7Zt-7O-OYX"/>
                     </connections>
