@@ -23,7 +23,7 @@ class FlickrClient: WebClient {
 			"media": "photos",
 			"content_type": "1",  // photos only, not screenshots
 			"sort": "date-taken-desc",
-			"extras": "date_taken,url_s,url_m",
+			"extras": "date_taken",
 		]
 	}()
 
@@ -73,6 +73,5 @@ class FlickrClient: WebClient {
 		func pathComponent() -> String {
 			return self.rawValue
 		}
-	}
-	
+	}	
 }
