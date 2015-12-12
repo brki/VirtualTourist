@@ -24,6 +24,7 @@ class MapViewController: UIViewController {
 	@IBOutlet weak var mapView: MKMapView!
 	override func viewDidLoad() {
 		super.viewDidLoad()
+        mapView.delegate = self
         addSavedPinsToMap()
 		// Do any additional setup after loading the view, typically from a nib.
 	}
@@ -71,7 +72,6 @@ class MapViewController: UIViewController {
 	}
 
 	func getAssociatedPhotos(pin: Pin) {
-        // TODO: save context (currently done in the search operation)
         let searchOperation = SearchOperation(pin: pin, maxPhotos: Constant.MaxPhotosPerPin)
         searchOperation.completionBlock = {
             if let error = searchOperation.error {
@@ -108,10 +108,7 @@ class MapViewController: UIViewController {
 	}
 
 	func addAnnotationForPin(pin: Pin) -> MKPointAnnotation {
-		let annotation = MKPointAnnotation()
-        context.performBlockAndWait {
-            annotation.coordinate = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
-        }
+		let annotation = PinAnnotation(pin: pin)
 		mapView.addAnnotation(annotation)
 		return annotation
 	}
@@ -124,8 +121,7 @@ class MapViewController: UIViewController {
 		async_main {
 			self.presentViewController(alertController, animated: true, completion: completion)
 		}
-	}
-
+	}    
 }
 
 extension MapViewController: MKMapViewDelegate {
@@ -139,4 +135,13 @@ extension MapViewController: MKMapViewDelegate {
 		}
 		return annotationView
 	}
+
+    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
+        guard let pinAnnotation = view.annotation as? PinAnnotation,
+            destinationVC = storyboard?.instantiateViewControllerWithIdentifier("CollectionVC") as? CollectionViewController else {
+                return
+        }
+        destinationVC.pin = pinAnnotation.pin
+        self.presentViewController(destinationVC, animated: true, completion: nil)
+    }
 }
