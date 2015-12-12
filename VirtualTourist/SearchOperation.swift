@@ -172,21 +172,6 @@ class SearchOperation: NSOperation {
             return
         }
         handleEndOfExecution()
-        saveContext()
-    }
-    
-    func saveContext() {
-        guard let context = pin.managedObjectContext else {
-            print("saveContext(): pin has no managedObjectContext")
-            return
-        }
-        context.performBlock {
-            do {
-                try context.save()
-            } catch {
-                self.error = error as NSError
-            }
-        }
     }
     
     func handleEndOfExecution() {
