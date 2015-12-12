@@ -89,8 +89,8 @@ class SearchOperation: NSOperation {
 			let responsePhotoCount = searchResponse.photos.count
 			if searchResponse.pages > 1 && self.maxPhotos > responsePhotoCount {
 				self.getMoreResponsePages(searchResponse)
-			} else if responsePhotoCount == 0 {
-				// There are no (more) photos.
+			} else {
+				// There are no photos, or no more pages of photos
 				self.handleEndOfExecution()
 			}
 		}
@@ -121,7 +121,7 @@ class SearchOperation: NSOperation {
                     
                     if self.pagesProcessed == response.pages {
                         // There are no more pages.
-                        self.successfullyCompleted()
+                        self.handleEndOfExecution()
                     } else if self.sessionTasks.count == 0 {
                         // If there are no more session tasks, and this code is running, we need still more photos.
                         // This can happen if, for example, the same photo information existed in the first and
@@ -138,7 +138,7 @@ class SearchOperation: NSOperation {
 		for photo in photos {
 			guard addPhoto(photo) else {
 				// The maximum number of photos has been processed.  The operation has accomplished it's goal.
-				successfullyCompleted()
+				handleEndOfExecution()
 				return
 			}
 		}
@@ -165,13 +165,6 @@ class SearchOperation: NSOperation {
             wasAdded = true
         }
         return wasAdded
-    }
-    
-    func successfullyCompleted() {
-        guard !finished else {
-            return
-        }
-        handleEndOfExecution()
     }
     
     func handleEndOfExecution() {
