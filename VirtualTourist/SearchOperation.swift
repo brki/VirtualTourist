@@ -28,42 +28,42 @@ class SearchOperation: NSOperation {
 		}
 		set {
 			objc_sync_enter(self)
-            _pagesProcessed = newValue
-            objc_sync_exit(self)
+			_pagesProcessed = newValue
+			objc_sync_exit(self)
 		}
 	}
-    
-    // If the operation finishes with an error, this value will be set.
-    var error: NSError?
-    
-    override var asynchronous: Bool { return true }
-    
-    private var _executing : Bool = false
-    override var executing : Bool {
-        get { return _executing }
-        set {
-            willChangeValueForKey("isExecuting")
-            _executing = newValue
-            didChangeValueForKey("isExecuting")
-        }
-    }
 
-    private var _finished : Bool = false
-    override var finished : Bool {
-        get { return _finished }
-        set {
-            willChangeValueForKey("isFinished")
-            _finished = newValue
-            didChangeValueForKey("isFinished")
-        }
-    }
-    
-    var maxConcurrency = 5
-    lazy var concurrentQueue: NSOperationQueue = {
-        let queue = NSOperationQueue()
-        queue.maxConcurrentOperationCount = self.maxConcurrency
-        return queue
-    }()
+	// If the operation finishes with an error, this value will be set.
+	var error: NSError?
+
+	override var asynchronous: Bool { return true }
+
+	private var _executing : Bool = false
+	override var executing : Bool {
+		get { return _executing }
+		set {
+			willChangeValueForKey("isExecuting")
+			_executing = newValue
+			didChangeValueForKey("isExecuting")
+		}
+	}
+
+	private var _finished : Bool = false
+	override var finished : Bool {
+		get { return _finished }
+		set {
+			willChangeValueForKey("isFinished")
+			_finished = newValue
+			didChangeValueForKey("isFinished")
+		}
+	}
+
+	var maxConcurrency = 5
+	lazy var concurrentQueue: NSOperationQueue = {
+		let queue = NSOperationQueue()
+		queue.maxConcurrentOperationCount = self.maxConcurrency
+		return queue
+	}()
 
 
 	init(pin: Pin, maxPhotos: Int) {
@@ -74,14 +74,14 @@ class SearchOperation: NSOperation {
 
 	override func start() {
 		if cancelled {
-            handleEndOfExecution()
+			handleEndOfExecution()
 			return
 		}
-        executing = true
+		executing = true
 
 		let firstPageTask = fetchResultsPage(1) { searchResponse in
 			if self.cancelled {
-                self.handleEndOfExecution()
+				self.handleEndOfExecution()
 				return
 			}
 			self.addPhotosToContext(searchResponse.photos)
@@ -97,41 +97,41 @@ class SearchOperation: NSOperation {
 		self.sessionTasks[1] = firstPageTask
 	}
 
-    func getMoreResponsePages(response: FlickrPhotoSearchResponse) {
+	func getMoreResponsePages(response: FlickrPhotoSearchResponse) {
 		objc_sync_enter(self)
 		defer {
 			objc_sync_exit(self)
 		}
-        if self.cancelled {
-            handleEndOfExecution()
-            return
-        }
+		if self.cancelled {
+			handleEndOfExecution()
+			return
+		}
 		let needed = maxPhotos - photosAdded
 		guard needed > 0 else {
 			return
 		}
 		let neededPages = Int(ceil(Float(needed) / Float(response.perpage)))
 		let availablePages = min(neededPages, response.pages - pagesProcessed)
-        for i in pagesProcessed + 1 ... pagesProcessed + availablePages {
-            // Launch more URLSessionTasks using a concurrent queue.
-            self.concurrentQueue.addOperationWithBlock {
-                let task = self.fetchResultsPage(i) { searchResponse in
-                    self.addPhotosToContext(searchResponse.photos)
-                    self.pagesProcessed += 1
-                    
-                    if self.pagesProcessed == response.pages {
-                        // There are no more pages.
-                        self.handleEndOfExecution()
-                    } else if self.sessionTasks.count == 0 {
-                        // If there are no more session tasks, and this code is running, we need still more photos.
-                        // This can happen if, for example, the same photo information existed in the first and
-                        // second pages of the results.
-                        self.getMoreResponsePages(searchResponse)
-                    }
-                }
-                self.sessionTasks[i] = task
-            }
-        }
+		for i in pagesProcessed + 1 ... pagesProcessed + availablePages {
+			// Launch more URLSessionTasks using a concurrent queue.
+			self.concurrentQueue.addOperationWithBlock {
+				let task = self.fetchResultsPage(i) { searchResponse in
+					self.addPhotosToContext(searchResponse.photos)
+					self.pagesProcessed += 1
+
+					if self.pagesProcessed == response.pages {
+						// There are no more pages.
+						self.handleEndOfExecution()
+					} else if self.sessionTasks.count == 0 {
+						// If there are no more session tasks, and this code is running, we need still more photos.
+						// This can happen if, for example, the same photo information existed in the first and
+						// second pages of the results.
+						self.getMoreResponsePages(searchResponse)
+					}
+				}
+				self.sessionTasks[i] = task
+			}
+		}
 	}
 
 	func addPhotosToContext(photos: [FlickrPhoto]) {
@@ -144,39 +144,39 @@ class SearchOperation: NSOperation {
 		}
 	}
 
-    /**
-     Adds another photo to the context if the required number of photos has not yet been reached.
-     
-     This is a thread safe method.
-     */
-    func addPhoto(photo: FlickrPhoto) -> Bool {
-        var wasAdded = false
-        objc_sync_enter(self)
-        defer {
-            objc_sync_exit(self)
-        }
-        if photosAdded < maxPhotos {
-            // TODO: first check if it exists in the managedObjectContext, before trying to add it.  Or use NSMergeByPropertyObjectTrumpMergePolicy, if possible.
-            let context = pin.managedObjectContext!
-            context.performBlockAndWait {
-                let _ = Photo(pin: self.pin, photo: photo, managedObjectContext: context)
-            }
-            photosAdded += 1
-            wasAdded = true
-        }
-        return wasAdded
-    }
-    
-    func handleEndOfExecution() {
-		// Cancel any oustanding NSURLSession tasks:
-        if finished { return }
-		cleanup()
-        
-        // Trigger KVO notifications:
-        executing = false
-        finished = true
+	/**
+	Adds another photo to the context if the required number of photos has not yet been reached.
+
+	This is a thread safe method.
+	*/
+	func addPhoto(photo: FlickrPhoto) -> Bool {
+		var wasAdded = false
+		objc_sync_enter(self)
+		defer {
+			objc_sync_exit(self)
+		}
+		if photosAdded < maxPhotos {
+			// TODO: first check if it exists in the managedObjectContext, before trying to add it.  Or use NSMergeByPropertyObjectTrumpMergePolicy, if possible.
+			let context = pin.managedObjectContext!
+			context.performBlockAndWait {
+				let _ = Photo(pin: self.pin, photo: photo, managedObjectContext: context)
+			}
+			photosAdded += 1
+			wasAdded = true
+		}
+		return wasAdded
 	}
-    
+
+	func handleEndOfExecution() {
+		// Cancel any oustanding NSURLSession tasks:
+		if finished { return }
+		cleanup()
+
+		// Trigger KVO notifications:
+		executing = false
+		finished = true
+	}
+
 	/**
 	Ensure all sub-tasks are cancelled.
 	*/
@@ -195,38 +195,38 @@ class SearchOperation: NSOperation {
 	}
 
 	func cancelWithErrorInfo(err: ErrorInfo) {
-        objc_sync_enter(self)
-        defer {
-            objc_sync_exit(self)
-        }
-        if cancelled {
-            handleEndOfExecution()
-            return
-        }
-        var description = err.title
-        if let message = err.message {
-            description += ": \(message)"
-        }
-        var userInfo: [String: AnyObject] = [NSLocalizedDescriptionKey: description]
-        if let underlyingError = err.error {
-            userInfo["UnderlyingError"] = underlyingError
-        }
-        error = NSError(domain: "SearchOperation", code: 1, userInfo: userInfo)
-        cancel()
+		objc_sync_enter(self)
+		defer {
+			objc_sync_exit(self)
+		}
+		if cancelled {
+			handleEndOfExecution()
+			return
+		}
+		var description = err.title
+		if let message = err.message {
+			description += ": \(message)"
+		}
+		var userInfo: [String: AnyObject] = [NSLocalizedDescriptionKey: description]
+		if let underlyingError = err.error {
+			userInfo["UnderlyingError"] = underlyingError
+		}
+		error = NSError(domain: "SearchOperation", code: 1, userInfo: userInfo)
+		cancel()
 	}
 
 	func fetchResultsPage(page: Int, successHandler: (FlickrPhotoSearchResponse) -> Void) -> NSURLSessionDataTask {
-        var latitude = 0.0
-        var longitude = 0.0
-        pin.managedObjectContext!.performBlockAndWait {
-            latitude = self.pin.latitude
-            longitude = self.pin.longitude
-        }
+		var latitude = 0.0
+		var longitude = 0.0
+		pin.managedObjectContext!.performBlockAndWait {
+			latitude = self.pin.latitude
+			longitude = self.pin.longitude
+		}
 		let task = client.searchLocation(page, latitude: latitude, longitude: longitude) { jsonObject, response, error in
 			self.sessionTasks[page] = nil
 			if self.cancelled {
 				self.handleEndOfExecution()
-                return
+				return
 			}
 			if let err = error {
 				self.cancelWithErrorInfo(ErrorInfo(title: "Error fetching photo list", message: err.localizedDescription, error: err))

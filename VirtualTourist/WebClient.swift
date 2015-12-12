@@ -65,9 +65,9 @@ class WebClient {
 
 	/**
 	Start a NSURLSession data task for a JSON request.
-	
+
 	This adds the ``Accept`` and, if a body is supplied, ``Content-Type`` headers with a value of ``application/json``.
-	
+
 	The JSON response is converted to native objects before calling the completion handler.
 	*/
 	func makeJSONDataRequest(url: NSURL, requestMethod: MethodType, var headers: [String: String]! = nil, body: String? = nil,
@@ -186,11 +186,11 @@ extension WebClient {
 /**
 Example PathComponentProviding-implementing enum:
 
-enum AutoHousePaths: String, PathComponentProviding {
-	case Fridge = "refrigerator"
-	case Fan = "fan/{room}"
-	func pathComponent() -> String { return self.rawValue }
-}
+	enum AutoHousePaths: String, PathComponentProviding {
+		case Fridge = "refrigerator"
+		case Fan = "fan/{room}"
+		func pathComponent() -> String { return self.rawValue }
+	}
 */
 protocol PathComponentProviding {
 	func pathComponent() -> String

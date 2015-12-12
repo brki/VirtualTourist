@@ -20,7 +20,7 @@ class URLEncoder {
 		let pathCharacterSet = NSCharacterSet.URLPathAllowedCharacterSet().mutableCopy() as! NSMutableCharacterSet
 		pathCharacterSet.removeCharactersInString("/")
 		return pathCharacterSet
-		}()
+	}()
 
 	/**
 	Generates a query string with an optional leading '?' character from the provided param dictionary.

@@ -7,5 +7,5 @@
 //
 
 struct Constant {
-    static let MaxPhotosPerPin = 600
+	static let MaxPhotosPerPin = 600
 }

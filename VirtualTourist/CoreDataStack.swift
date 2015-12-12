@@ -56,12 +56,12 @@ class CoreDataStack {
 		managedObjectContext.persistentStoreCoordinator = coordinator
 		return managedObjectContext
 	}()
-    
-    func childContext(concurrencyType: NSManagedObjectContextConcurrencyType) -> NSManagedObjectContext {
-        let context = NSManagedObjectContext(concurrencyType: concurrencyType)
-        context.parentContext = managedObjectContext
-        return context
-    }
+
+	func childContext(concurrencyType: NSManagedObjectContextConcurrencyType) -> NSManagedObjectContext {
+		let context = NSManagedObjectContext(concurrencyType: concurrencyType)
+		context.parentContext = managedObjectContext
+		return context
+	}
 
 	// MARK: - Core Data Saving support
 

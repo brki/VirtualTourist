@@ -73,5 +73,5 @@ class FlickrClient: WebClient {
 		func pathComponent() -> String {
 			return self.rawValue
 		}
-	}	
+	}
 }

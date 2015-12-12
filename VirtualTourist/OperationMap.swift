@@ -7,5 +7,5 @@
 //
 
 struct OperationMap {
-    static var PinSearchOperation = [Pin: SearchOperation]()
+	static var PinSearchOperation = [Pin: SearchOperation]()
 }
