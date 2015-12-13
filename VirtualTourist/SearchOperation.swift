@@ -159,7 +159,7 @@ class SearchOperation: NSOperation {
 			// TODO: first check if it exists in the managedObjectContext, before trying to add it.  Or use NSMergeByPropertyObjectTrumpMergePolicy, if possible.
 			let context = pin.managedObjectContext!
 			context.performBlockAndWait {
-				let _ = Photo(pin: self.pin, photo: photo, managedObjectContext: context)
+				let _ = Photo(pin: self.pin, photo: photo, order: self.photosAdded, managedObjectContext: context)
 			}
 			photosAdded += 1
 			wasAdded = true

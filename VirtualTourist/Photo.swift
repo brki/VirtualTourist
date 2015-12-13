@@ -16,13 +16,13 @@ class Photo: NSManagedObject {
 		super.init(entity: entity, insertIntoManagedObjectContext: context)
 	}
 
-	init(pin: Pin, photo: FlickrPhoto, managedObjectContext context: NSManagedObjectContext) {
+	init(pin: Pin, photo: FlickrPhoto, order: Int, managedObjectContext context: NSManagedObjectContext) {
 		let entity = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)!
 		super.init(entity: entity, insertIntoManagedObjectContext: context)
 
-
 		self.pin = pin
 		self.flickrID = photo.id
+		self.order = order
 		self.title = photo.title
 		self.urlTemplate = photo.urlTemplate
 	}

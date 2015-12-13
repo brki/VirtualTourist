@@ -15,6 +15,7 @@ import CoreData
 extension Photo {
 
 	@NSManaged var flickrID: String
+	@NSManaged var order: Int
 	@NSManaged var urlTemplate: String
 	@NSManaged var title: String?
 	@NSManaged var pin: Pin?
