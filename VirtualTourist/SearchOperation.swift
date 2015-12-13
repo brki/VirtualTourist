@@ -15,10 +15,9 @@ struct ErrorInfo {
 	var error: NSError?
 }
 
-class SearchOperation: NSOperation {
+class SearchOperation: ConcurrentDownloadOperation {
 	var pin: Pin
 	let client = FlickrClient.sharedClient
-	var sessionTasks = [Int: NSURLSessionDataTask]()
 	var photosAdded = 0
 	var maxPhotos: Int
 	var _pagesProcessed = 0
@@ -32,39 +31,6 @@ class SearchOperation: NSOperation {
 			objc_sync_exit(self)
 		}
 	}
-
-	// If the operation finishes with an error, this value will be set.
-	var error: NSError?
-
-	override var asynchronous: Bool { return true }
-
-	private var _executing : Bool = false
-	override var executing : Bool {
-		get { return _executing }
-		set {
-			willChangeValueForKey("isExecuting")
-			_executing = newValue
-			didChangeValueForKey("isExecuting")
-		}
-	}
-
-	private var _finished : Bool = false
-	override var finished : Bool {
-		get { return _finished }
-		set {
-			willChangeValueForKey("isFinished")
-			_finished = newValue
-			didChangeValueForKey("isFinished")
-		}
-	}
-
-	var maxConcurrency = 5
-	lazy var concurrentQueue: NSOperationQueue = {
-		let queue = NSOperationQueue()
-		queue.maxConcurrentOperationCount = self.maxConcurrency
-		return queue
-	}()
-
 
 	init(pin: Pin, maxPhotos: Int) {
 		self.pin = pin
@@ -167,53 +133,6 @@ class SearchOperation: NSOperation {
 		return wasAdded
 	}
 
-	func handleEndOfExecution() {
-		// Cancel any oustanding NSURLSession tasks:
-		if finished { return }
-		cleanup()
-
-		// Trigger KVO notifications:
-		executing = false
-		finished = true
-	}
-
-	/**
-	Ensure all sub-tasks are cancelled.
-	*/
-	func cleanup() {
-		for (key, task) in sessionTasks {
-
-			switch task.state {
-			case .Running, .Suspended:
-				task.cancel()
-			default:
-				break
-			}
-
-			sessionTasks[key] = nil
-		}
-	}
-
-	func cancelWithErrorInfo(err: ErrorInfo) {
-		objc_sync_enter(self)
-		defer {
-			objc_sync_exit(self)
-		}
-		if cancelled {
-			handleEndOfExecution()
-			return
-		}
-		var description = err.title
-		if let message = err.message {
-			description += ": \(message)"
-		}
-		var userInfo: [String: AnyObject] = [NSLocalizedDescriptionKey: description]
-		if let underlyingError = err.error {
-			userInfo["UnderlyingError"] = underlyingError
-		}
-		error = NSError(domain: "SearchOperation", code: 1, userInfo: userInfo)
-		cancel()
-	}
 
 	func fetchResultsPage(page: Int, successHandler: (FlickrPhotoSearchResponse) -> Void) -> NSURLSessionDataTask {
 		var latitude = 0.0
