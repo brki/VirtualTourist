@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9531" systemVersion="15C50" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="BYZ-38-t0r">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9531" systemVersion="15C50" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="8Ol-EX-6QS">
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9529"/>
@@ -34,10 +34,12 @@
                             <constraint firstItem="D0F-Bo-QnJ" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="wPn-Hq-0oT"/>
                         </constraints>
                     </view>
+                    <navigationItem key="navigationItem" id="Kfp-r1-PHc"/>
                     <simulatedStatusBarMetrics key="simulatedStatusBarMetrics" statusBarStyle="lightContent"/>
+                    <nil key="simulatedTopBarMetrics"/>
                     <connections>
                         <outlet property="mapView" destination="D0F-Bo-QnJ" id="7Zt-7O-OYX"/>
-                        <segue destination="BE6-jc-vNV" kind="presentation" identifier="MapToCollection" id="WhW-he-rog"/>
+                        <segue destination="BE6-jc-vNV" kind="show" identifier="MapToCollection" id="WhW-he-rog"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
@@ -47,6 +49,22 @@
                     </connections>
                 </pongPressGestureRecognizer>
             </objects>
+        </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="GeT-B3-v6Y">
+            <objects>
+                <navigationController id="8Ol-EX-6QS" sceneMemberID="viewController">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="2kr-e4-Aoh">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <connections>
+                        <segue destination="BYZ-38-t0r" kind="relationship" relationship="rootViewController" id="u3a-fN-HRd"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Ymz-e2-N35" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-18" y="483"/>
         </scene>
         <!--Collection View Controller-->
         <scene sceneID="1UL-hV-I8e">
@@ -70,7 +88,7 @@
                                 </collectionViewFlowLayout>
                                 <cells>
                                     <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="PhotoCell" id="8JI-cv-KAH">
-                                        <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
+                                        <rect key="frame" x="0.0" y="64" width="50" height="50"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
                                             <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
@@ -89,10 +107,11 @@
                             <constraint firstItem="Y3K-rr-Kce" firstAttribute="top" secondItem="jgv-oB-OWi" secondAttribute="top" id="fSo-my-x14"/>
                         </constraints>
                     </view>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" barStyle="black" prompted="NO"/>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k0p-Dz-Th9" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1174" y="426"/>
+            <point key="canvasLocation" x="1379" y="483"/>
         </scene>
     </scenes>
 </document>

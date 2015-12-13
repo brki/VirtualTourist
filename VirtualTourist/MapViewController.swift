@@ -29,6 +29,16 @@ class MapViewController: UIViewController {
 		// Do any additional setup after loading the view, typically from a nib.
 	}
 
+	override func viewWillAppear(animated: Bool) {
+		navigationController?.navigationBar.hidden = true
+		super.viewWillAppear(animated)
+	}
+
+	override func viewWillDisappear(animated: Bool) {
+		navigationController?.navigationBar.hidden = false
+		super.viewDidDisappear(animated)
+	}
+
 	override func didReceiveMemoryWarning() {
 		super.didReceiveMemoryWarning()
 		// Dispose of any resources that can be recreated.
@@ -142,6 +152,10 @@ extension MapViewController: MKMapViewDelegate {
 				return
 		}
 		destinationVC.pin = pinAnnotation.pin
-		self.presentViewController(destinationVC, animated: true, completion: nil)
+
+		// Deselect the annotation before pushing, so that it won't be selected when returning to this view controller:
+		mapView.selectedAnnotations.removeAll()
+
+		navigationController?.pushViewController(destinationVC, animated: true)
 	}
 }
