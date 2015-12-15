@@ -9,12 +9,6 @@
 import Foundation
 import CoreData
 
-struct ErrorInfo {
-	var title: String
-	var message: String?
-	var error: NSError?
-}
-
 class SearchOperation: ConcurrentDownloadOperation {
 	var pin: Pin
 	let client = FlickrClient.sharedClient
@@ -36,18 +30,17 @@ class SearchOperation: ConcurrentDownloadOperation {
 		self.pin = pin
 		self.maxPhotos = maxPhotos
 		super.init()
+		self.errorDomain = "ConcurrentDownloadOperation"
 	}
 
 	override func start() {
 		if cancelled {
-			handleEndOfExecution()
 			return
 		}
 		executing = true
 
 		let firstPageTask = fetchResultsPage(1) { searchResponse in
 			if self.cancelled {
-				self.handleEndOfExecution()
 				return
 			}
 			self.addPhotosToContext(searchResponse.photos)
@@ -60,7 +53,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 				self.handleEndOfExecution()
 			}
 		}
-		self.sessionTasks[1] = firstPageTask
+		self.sessionTasks["1"] = firstPageTask
 	}
 
 	func getMoreResponsePages(response: FlickrPhotoSearchResponse) {
@@ -69,7 +62,6 @@ class SearchOperation: ConcurrentDownloadOperation {
 			objc_sync_exit(self)
 		}
 		if self.cancelled {
-			handleEndOfExecution()
 			return
 		}
 		let needed = maxPhotos - photosAdded
@@ -82,6 +74,11 @@ class SearchOperation: ConcurrentDownloadOperation {
 			// Launch more URLSessionTasks using a concurrent queue.
 			self.concurrentQueue.addOperationWithBlock {
 				let task = self.fetchResultsPage(i) { searchResponse in
+
+					if self.cancelled {
+						return
+					}
+
 					self.addPhotosToContext(searchResponse.photos)
 					self.pagesProcessed += 1
 
@@ -95,7 +92,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 						self.getMoreResponsePages(searchResponse)
 					}
 				}
-				self.sessionTasks[i] = task
+				self.sessionTasks[String(i)] = task
 			}
 		}
 	}
@@ -133,7 +130,6 @@ class SearchOperation: ConcurrentDownloadOperation {
 		return wasAdded
 	}
 
-
 	func fetchResultsPage(page: Int, successHandler: (FlickrPhotoSearchResponse) -> Void) -> NSURLSessionDataTask {
 		var latitude = 0.0
 		var longitude = 0.0
@@ -142,25 +138,30 @@ class SearchOperation: ConcurrentDownloadOperation {
 			longitude = self.pin.longitude
 		}
 		let task = client.searchLocation(page, latitude: latitude, longitude: longitude) { jsonObject, response, error in
-			self.sessionTasks[page] = nil
+			self.sessionTasks[String(page)] = nil
+
 			if self.cancelled {
-				self.handleEndOfExecution()
 				return
 			}
+
 			if let err = error {
-				self.cancelWithErrorInfo(ErrorInfo(title: "Error fetching photo list", message: err.localizedDescription, error: err))
+				self.error = self.makeNSError(1, localizedDescription: "Error fetching photo list", underlyingError: err)
+				self.cancel()
 				return
 			}
-			guard let httpResponse = response as? NSHTTPURLResponse else {
-				self.cancelWithErrorInfo(ErrorInfo(title: "Unexpected response type", message: "response: \(response)", error: nil))
-				return
-			}
+
+			// If there was no error, WebClient has provided a response: 
+			let httpResponse = response!
+
 			guard httpResponse.statusCode == 200 else {
-				self.cancelWithErrorInfo(ErrorInfo(title: "Unexpected response", message: "Code: \(httpResponse.statusCode)", error: nil))
+				self.error = self.makeNSError(2, localizedDescription: "Unexpected response code: \(httpResponse.statusCode)")
+				self.cancel()
 				return
 			}
+
 			guard let photosInfo = FlickrPhotoSearchResponse(jsonObject: jsonObject) else {
-				self.cancelWithErrorInfo(ErrorInfo(title: "Unexpected response format", message: nil, error: nil))
+				self.error = self.makeNSError(3, localizedDescription: "Unexpected response format")
+				self.cancel()
 				return
 			}
 
