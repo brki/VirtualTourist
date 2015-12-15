@@ -22,6 +22,50 @@ class WebClient {
 		}
 	}
 
+	static func dataRequest(request: NSURLRequest, body: String? = nil, startImmediately: Bool = false, completionHandler: ((data: NSData?, response: NSHTTPURLResponse?, error: NSError?) -> Void)? = nil) -> NSURLSessionDataTask {
+
+		if let body = body {
+			if let mutableRequest = request as? NSMutableURLRequest,
+				encodedBody = body.dataUsingEncoding(NSUTF8StringEncoding) {
+				mutableRequest.HTTPBody = encodedBody
+			}
+		}
+
+		let session = NSURLSession.sharedSession()
+
+		let task = session.dataTaskWithRequest(request) { data, response, error in
+
+			if let handler = completionHandler {
+
+				guard error == nil else {
+					handler(data: data, response: response as? NSHTTPURLResponse ?? nil, error: error)
+					return
+				}
+
+				guard let httpResponse = response as? NSHTTPURLResponse else {
+
+					var detailError: NSError
+					if response == nil {
+						detailError = Error.UnexpectedNoResponse.asNSError()
+					} else {
+						detailError =  Error.UnexpectedResponseFormat.asNSError(detail: "Response was of type \(response.dynamicType)")
+					}
+
+					handler(data: data, response: nil, error: detailError)
+					return
+				}
+
+				handler(data: data, response: httpResponse, error: error)
+			}
+		}
+
+		if startImmediately {
+			task.resume()
+		}
+
+		return task
+	}
+
 	/**
 	Start a NSURLSession data task.
 	*/
@@ -34,33 +78,7 @@ class WebClient {
 			}
 		}
 
-		if let body = body {
-			if let encodedBody = body.dataUsingEncoding(NSUTF8StringEncoding) {
-				request.HTTPBody = encodedBody
-			}
-		}
-		let session = NSURLSession.sharedSession()
-		let task = session.dataTaskWithRequest(request) { data, response, error in
-			if let handler = completionHandler {
-				guard error == nil else {
-					handler(data: data, response: response as? NSHTTPURLResponse ?? nil, error: error)
-					return
-				}
-				guard let httpResponse = response as? NSHTTPURLResponse else {
-					var detailError: NSError
-					if response == nil {
-						detailError = Error.UnexpectedNoResponse.asNSError()
-					} else {
-						detailError =  Error.UnexpectedResponseFormat.asNSError(detail: "Response was of type \(response.dynamicType)")
-					}
-					handler(data: data, response: nil, error: detailError)
-					return
-				}
-				handler(data: data, response: httpResponse, error: error)
-			}
-		}
-		task.resume()
-		return task
+		return WebClient.dataRequest(request, body: body, startImmediately: true, completionHandler: completionHandler)
 	}
 
 	/**

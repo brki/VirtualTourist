@@ -27,7 +27,7 @@ class FlickrClient: WebClient {
 		]
 	}()
 
-	func searchLocation(page: Int, latitude: Double, longitude: Double, handler: ((jsonObject: AnyObject?, response: NSURLResponse?, error: NSError?) -> Void)? = nil) -> NSURLSessionDataTask {
+	func searchLocation(page: Int, latitude: Double, longitude: Double, handler: ((jsonObject: AnyObject?, response: NSHTTPURLResponse?, error: NSError?) -> Void)? = nil) -> NSURLSessionDataTask {
 
 		let requestParams = defaultParams + [
 			"page": String(page),
