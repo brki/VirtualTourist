@@ -24,4 +24,32 @@ class Pin: NSManagedObject {
 		self.relativePath = NSUUID().UUIDString
 	}
 
+	func directory(var version: Int? = nil) -> NSURL? {
+		if version == nil {
+			version = self.photosVersion
+		}
+		var url: NSURL? = Constant.documentDir.URLByAppendingPathComponent(self.relativePath + "-\(version)")
+		do {
+			try NSFileManager.defaultManager().createDirectoryAtURL(url!, withIntermediateDirectories: true, attributes: nil)
+		} catch {
+			print("There was an error creating (or ensuring that it exists) the directory for URL: \(url): \(error)")
+			url = nil
+		}
+		return url
+	}
+
+	func deleteDirectoryForVersion(version: Int) -> Bool {
+		guard let url = directory() else {
+			print("Unable to get directory URL for version \(version)")
+			return false
+		}
+		do {
+			try NSFileManager.defaultManager().removeItemAtURL(url)
+			return true
+		} catch {
+			print("There was an error creating (or ensuring that it exists) the directory for URL: \(url): \(error)")
+			return false
+		}
+	}
+
 }

@@ -69,13 +69,4 @@ struct FlickrPhoto {
 		self.title = json["title"] as? String
 		self.urlTemplate = URLTemplate(json)
 	}
-
-	enum PhotoSize: String {
-		case Small = "s"
-		case Medium = "m"
-	}
-
-	func URLForSize(size: PhotoSize) -> String {
-		return self.urlTemplate.stringByReplacingOccurrencesOfString("{size}", withString: size.rawValue)
-	}
 }

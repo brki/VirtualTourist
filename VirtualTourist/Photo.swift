@@ -12,6 +12,11 @@ import CoreData
 
 class Photo: NSManagedObject {
 
+	enum PhotoSize: String {
+		case Small = "s"
+		case Medium = "m"
+	}
+
 	override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
 		super.init(entity: entity, insertIntoManagedObjectContext: context)
 	}
@@ -25,5 +30,17 @@ class Photo: NSManagedObject {
 		self.order = order
 		self.title = photo.title
 		self.urlTemplate = photo.urlTemplate
+	}
+
+	func URLForSize(size: PhotoSize) -> NSURL {
+		let urlString = self.urlTemplate.stringByReplacingOccurrencesOfString("{size}", withString: size.rawValue)
+		return NSURL(string: urlString)!
+	}
+
+	var fileURL: NSURL? {
+		guard let pinDirectory = self.pin?.directory() else {
+			return nil
+		}
+		return pinDirectory.URLByAppendingPathComponent("\(self.flickrID).jpg")
 	}
 }
