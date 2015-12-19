@@ -8,12 +8,18 @@
 
 import Foundation
 
+protocol OperationError {
+
+	// If the operation finishes with an error, this value will be set.
+	var error: NSError? {get set}
+}
+
 /**
 An operation whose prinicpal task runs asynchronously.
 
 Since it runs asynchronously, subclasses should implement start(), not main().
 */
-class ConcurrentOperation: NSOperation {
+class ConcurrentOperation: NSOperation, OperationError {
 
 	struct ErrorInfo {
 		var title: String
@@ -21,12 +27,11 @@ class ConcurrentOperation: NSOperation {
 		var error: NSError?
 	}
 
+	var error: NSError?
 	var errorDomain: String = "ConcurrentOperation"
 
-	// If the operation finishes with an error, this value will be set.
-	var error: NSError?
-
 	var shouldCancelIfAnyDependencyCancelled = true
+	var shouldEndWithErrorIfAnyDependencyHasError = true
 
 	override var asynchronous: Bool { return true }
 
@@ -56,10 +61,12 @@ class ConcurrentOperation: NSOperation {
 
 	override func start() {
 		cancelIfAnyDependencyCancelled()
-		if cancelled {
+		setErrorIfAnyDependencyHasError()
+		guard !cancelled && error == nil else {
 			handleEndOfExecution()
 			return
 		}
+
 		executing = true
 		startExecution()
 	}
@@ -91,6 +98,22 @@ class ConcurrentOperation: NSOperation {
 			if dependency.cancelled {
 				self.cancel()
 				return
+			}
+		}
+	}
+
+	/**
+	If any of the tasks that this operation depend on have an error, and shouldEndWithErrorIfAnyDependencyHasError is true,
+	then set this operation's error to the first dependency error that is encountered.
+	*/
+	func setErrorIfAnyDependencyHasError() {
+		guard shouldEndWithErrorIfAnyDependencyHasError else {
+			return
+		}
+		for dependency in self.dependencies {
+			if let d = dependency as? OperationError,
+				err = d.error {
+					error = err
 			}
 		}
 	}

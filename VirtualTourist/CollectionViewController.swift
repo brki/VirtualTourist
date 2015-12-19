@@ -22,15 +22,6 @@ class CollectionViewController: UIViewController {
 		let context = pin.managedObjectContext!
 		let fetchRequest = NSFetchRequest(entityName: "Photo")
 		fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [pin])
-		context.performBlock {
-			do {
-				let photoList = try context.executeFetchRequest(fetchRequest) as! [Photo]
-				let operation = DownloadFilesOperation(photos: photoList)
-				operation.start()
-			} catch {
-				print("Error fetching photoList: \(error)")
-			}
-		}
 		// Do any additional setup after loading the view, typically from a nib.
 	}
 }
