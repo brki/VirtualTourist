@@ -27,7 +27,6 @@ class CollectionViewController: UIViewController {
 				let photoList = try context.executeFetchRequest(fetchRequest) as! [Photo]
 				let operation = DownloadFilesOperation(photos: photoList)
 				operation.start()
-				print(photoList)
 			} catch {
 				print("Error fetching photoList: \(error)")
 			}

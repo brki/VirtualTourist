@@ -23,12 +23,7 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 		super.init()
 	}
 
-	override func start() {
-		if cancelled {
-			return
-		}
-		executing = true
-
+	override func startExecution() {
 		for photo in photos {
 			var photoAlreadyDownloaded = false
 			var photoID: String!

@@ -33,12 +33,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 		self.errorDomain = "ConcurrentDownloadOperation"
 	}
 
-	override func start() {
-		if cancelled {
-			return
-		}
-		executing = true
-
+	override func startExecution() {
 		let firstPageTask = fetchResultsPage(1) { searchResponse in
 			if self.cancelled {
 				return

@@ -22,13 +22,7 @@ class DownloadSingleFileOperation: ConcurrentOperation {
 		self.errorDomain = "DownloadSingleFileOperation"
 	}
 
-	override func start() {
-		if cancelled {
-			handleEndOfExecution()
-			return
-		}
-		executing = true
-
+	override func startExecution() {
 		initiateDownload()
 	}
 
@@ -76,7 +70,6 @@ class DownloadSingleFileOperation: ConcurrentOperation {
 		// Free up data and the task memory, since the operation may sit around in a queue for a while:
 		data = nil
 		error = nil
-
 		super.cleanup()
 	}
 

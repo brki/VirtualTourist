@@ -26,6 +26,8 @@ class ConcurrentOperation: NSOperation {
 	// If the operation finishes with an error, this value will be set.
 	var error: NSError?
 
+	var shouldCancelIfAnyDependencyCancelled = true
+
 	override var asynchronous: Bool { return true }
 
 	private var _executing : Bool = false
@@ -52,6 +54,22 @@ class ConcurrentOperation: NSOperation {
 		super.init()
 	}
 
+	override func start() {
+		cancelIfAnyDependencyCancelled()
+		if cancelled {
+			handleEndOfExecution()
+			return
+		}
+		executing = true
+		startExecution()
+	}
+
+	/**
+	Subclasses should override this to start whatever they want to start.
+	*/
+	func startExecution() {
+	}
+
 	override func cancel() {
 		objc_sync_enter(self)
 		defer {
@@ -59,6 +77,22 @@ class ConcurrentOperation: NSOperation {
 		}
 		handleEndOfExecution()
 		super.cancel()
+	}
+
+	/**
+	If any of the tasks that this operation depend on were cancelled, and shouldCancelIfAnyDependencyCancelled is true,
+	then cancel this task.
+	*/
+	func cancelIfAnyDependencyCancelled() {
+		guard shouldCancelIfAnyDependencyCancelled else {
+			return
+		}
+		for dependency in self.dependencies {
+			if dependency.cancelled {
+				self.cancel()
+				return
+			}
+		}
 	}
 
 	// TODO: rename this:
