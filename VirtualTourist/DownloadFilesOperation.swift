@@ -14,16 +14,37 @@ import CoreData
 class DownloadFilesOperation: ConcurrentDownloadOperation {
 
 	let client = FlickrClient.sharedClient
-	let photos: [Photo]!
-	var photoSize: Photo.PhotoSize!
+	let photoSize: Photo.PhotoSize
+	let pin: Pin
 
-	init(photos: [Photo], photoSize: Photo.PhotoSize = .Medium) {
-		self.photos = photos
+	init(pin: Pin, photoSize: Photo.PhotoSize = .Medium) {
+		self.pin = pin
 		self.photoSize = photoSize
 		super.init()
 	}
 
 	override func startExecution() {
+
+		guard let pinContext = pin.managedObjectContext else {
+			self.error = makeNSError(1, localizedDescription: "Pin is not associated with a context")
+			self.handleEndOfExecution()
+			return
+		}
+
+		let fetchRequest = NSFetchRequest(entityName: "Photo")
+		fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [pin])
+		var photoList: [Photo]!
+		pinContext.performBlock {
+			do {
+				photoList = try pinContext.executeFetchRequest(fetchRequest) as! [Photo]
+				self.downloadPhotos(photoList)
+			} catch {
+				print("Error fetching photoList: \(error)")
+			}
+		}
+	}
+
+	func downloadPhotos(photos: [Photo]) {
 		for photo in photos {
 			var photoAlreadyDownloaded = false
 			var photoID: String!
@@ -73,6 +94,8 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 					photo.downloaded = true
 				}
 			}
+			
+			operation.addDependency(self)
 
 			concurrentQueue.addOperation(operation)
 		}

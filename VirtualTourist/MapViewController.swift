@@ -84,15 +84,22 @@ class MapViewController: UIViewController {
 	func getAssociatedPhotos(pin: Pin) {
 		let searchOperation = SearchOperation(pin: pin, maxPhotos: Constant.MaxPhotosPerPin)
 		searchOperation.completionBlock = {
+
 			if let error = searchOperation.error {
 				self.showErrorAlert("Fetch error", message: error.localizedDescription)
 				return
 			}
+
+			guard let pinContext = pin.managedObjectContext else {
+				self.showErrorAlert("Data Storage error", message: "Pin is not associated with a context")
+				return
+			}
+
 			var childContextSaved = false
-			self.context.performBlockAndWait {
+			pinContext.performBlockAndWait {
 				do {
 					// Push the changes up to the parent context:
-					try self.context.save()
+					try pinContext.save()
 					childContextSaved = true
 				} catch {
 					print("Error saving child context: \(error)")
@@ -103,7 +110,7 @@ class MapViewController: UIViewController {
 				return
 			}
 			// Save the parent context on the private queue:
-			let privateQueueContext = self.context.parentContext!
+			let privateQueueContext = pinContext.parentContext!
 			privateQueueContext.performBlock {
 				do {
 					try privateQueueContext.save()
@@ -113,7 +120,12 @@ class MapViewController: UIViewController {
 				}
 			}
 		}
+
+		let downloadFilesOperation = DownloadFilesOperation(pin: pin)
+		downloadFilesOperation.addDependency(searchOperation)
+
 		OperationMap.PinSearchOperation[pin] = searchOperation
+
 		searchOperation.start()
 	}
 
