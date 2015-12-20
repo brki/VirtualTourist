@@ -118,7 +118,6 @@ class ConcurrentOperation: NSOperation, OperationError {
 		}
 	}
 
-	// TODO: rename this:
 	func handleEndOfExecution() {
 		if finished { return }
 		cleanup()
@@ -128,7 +127,6 @@ class ConcurrentOperation: NSOperation, OperationError {
 		finished = true
 	}
 
-	// TODO: rename this:
 	/**
 	Subclasses can override this to execute the necessary cleanup for when a task
 	has finished (successfully or unsuccessfully, cancelled or not).

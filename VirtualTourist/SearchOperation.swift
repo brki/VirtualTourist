@@ -56,21 +56,25 @@ class SearchOperation: ConcurrentDownloadOperation {
 		defer {
 			objc_sync_exit(self)
 		}
-		if self.cancelled {
+
+		guard !cancelled && error == nil else {
 			return
 		}
+
 		let needed = maxPhotos - photosAdded
 		guard needed > 0 else {
 			return
 		}
+
 		let neededPages = Int(ceil(Float(needed) / Float(response.perpage)))
 		let availablePages = min(neededPages, response.pages - pagesProcessed)
+
 		for i in pagesProcessed + 1 ... pagesProcessed + availablePages {
 			// Launch more URLSessionTasks using a concurrent queue.
 			self.concurrentQueue.addOperationWithBlock {
 				let task = self.fetchResultsPage(i) { searchResponse in
 
-					if self.cancelled {
+					guard !self.cancelled && self.error == nil else {
 						return
 					}
 
@@ -135,7 +139,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 		let task = client.searchLocation(page, latitude: latitude, longitude: longitude) { jsonObject, response, error in
 			self.sessionTasks[String(page)] = nil
 
-			if self.cancelled {
+			guard !self.cancelled && self.error == nil else {
 				return
 			}
 

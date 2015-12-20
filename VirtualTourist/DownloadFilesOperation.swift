@@ -11,6 +11,10 @@ import Foundation
 import Foundation
 import CoreData
 
+
+private var downloadFilesOperationObserverContext = 0
+
+
 class DownloadFilesOperation: ConcurrentDownloadOperation {
 
 	let client = FlickrClient.sharedClient
@@ -18,9 +22,18 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 	let pin: Pin
 
 	init(pin: Pin, photoSize: Photo.PhotoSize = .Medium) {
+
 		self.pin = pin
 		self.photoSize = photoSize
+
 		super.init()
+
+		// Add an observer so that this operation can be marked as finished when the queue operation count drops to zero.
+		concurrentQueue.addObserver(self, forKeyPath: "operationCount", options: .New, context: &downloadFilesOperationObserverContext)
+	}
+
+	deinit {
+		concurrentQueue.removeObserver(self, forKeyPath: "operationCount")
 	}
 
 	override func startExecution() {
@@ -42,9 +55,11 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 				print("Error fetching photoList: \(error)")
 			}
 		}
+
 	}
 
 	func downloadPhotos(photos: [Photo]) {
+		var operations = [NSOperation]()
 		for photo in photos {
 			var photoAlreadyDownloaded = false
 			var photoID: String!
@@ -96,13 +111,34 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 			}
 			
 			operation.addDependency(self)
-
-			concurrentQueue.addOperation(operation)
+			operations.append(operation)
 		}
+
+		if cancelled {
+			return
+		}
+
+		concurrentQueue.addOperations(operations, waitUntilFinished: false)
 	}
 
 	override func cleanup() {
 		concurrentQueue.cancelAllOperations()
 		super.cleanup()
 	}
+
+	override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+		guard context == &downloadFilesOperationObserverContext else {
+			super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
+			return
+		}
+
+		guard let path = keyPath where path == "operationCount" else {
+			return
+		}
+
+		if let newValue = change?[NSKeyValueChangeNewKey] as? Int where newValue == 0 {
+			handleEndOfExecution()
+		}
+	}
+	
 }
