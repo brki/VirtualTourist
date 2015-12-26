@@ -18,12 +18,20 @@ class CollectionViewController: UIViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		collectionView.dataSource = self
+	}
+
+	override func viewWillAppear(animated: Bool) {
+
+		// If an ongoing SearchOperation exists for this pin.photosVersion, show a spinner indicator and wait until
+		QueueManager.serialQueueForPin(pin)
 
 		let context = pin.managedObjectContext!
 		let fetchRequest = NSFetchRequest(entityName: "Photo")
 		fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [pin])
 		// Do any additional setup after loading the view, typically from a nib.
 	}
+
+
 }
 
 extension CollectionViewController: UICollectionViewDataSource {

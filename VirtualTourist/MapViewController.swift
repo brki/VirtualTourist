@@ -121,12 +121,12 @@ class MapViewController: UIViewController {
 			}
 		}
 
+
 		let downloadFilesOperation = DownloadFilesOperation(pin: pin)
 		downloadFilesOperation.addDependency(searchOperation)
 
-		OperationMap.PinSearchOperation[pin] = searchOperation
-
-		searchOperation.start()
+		QueueManager.serialQueueForPin(pin).addOperation(searchOperation)
+		QueueManager.filesDownloadQueue.addOperation(downloadFilesOperation)
 	}
 
 	func addAnnotationForPin(pin: Pin) -> MKPointAnnotation {

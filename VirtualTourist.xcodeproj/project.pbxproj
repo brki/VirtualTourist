@@ -10,6 +10,7 @@
 		D303AD9D1C181F6700CDC399 /* utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = D303AD9C1C181F6700CDC399 /* utilities.swift */; };
 		D303AD9F1C182CC500CDC399 /* FlickrObjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = D303AD9E1C182CC500CDC399 /* FlickrObjects.swift */; };
 		D33672091C18C5E00011914C /* SearchOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33672081C18C5E00011914C /* SearchOperation.swift */; };
+		D34DF4861C2D766D006E25FF /* ErrorAwareOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D34DF4851C2D766D006E25FF /* ErrorAwareOperation.swift */; };
 		D35BD9211C1DA99700866F2C /* DownloadFilesOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35BD9201C1DA99700866F2C /* DownloadFilesOperation.swift */; };
 		D35BD9241C1DB61700866F2C /* ConcurrentDownloadOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35BD9231C1DB61700866F2C /* ConcurrentDownloadOperation.swift */; };
 		D35BD9261C20AFE000866F2C /* ConcurrentOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35BD9251C20AFE000866F2C /* ConcurrentOperation.swift */; };
@@ -27,7 +28,7 @@
 		D382CDE21C09EDB900BCE3FB /* Pin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D382CDDE1C09EDB900BCE3FB /* Pin.swift */; };
 		D382CDE31C09EDB900BCE3FB /* Photo+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = D382CDDF1C09EDB900BCE3FB /* Photo+CoreDataProperties.swift */; };
 		D382CDE41C09EDB900BCE3FB /* Photo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D382CDE01C09EDB900BCE3FB /* Photo.swift */; };
-		D3BA537C1C1C5A9200B2FB22 /* OperationMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3BA537B1C1C5A9200B2FB22 /* OperationMap.swift */; };
+		D3BA537C1C1C5A9200B2FB22 /* QueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3BA537B1C1C5A9200B2FB22 /* QueueManager.swift */; };
 		D3BA537E1C1C5DBB00B2FB22 /* Constant.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3BA537D1C1C5DBB00B2FB22 /* Constant.swift */; };
 		D3BA53801C1CB81100B2FB22 /* CollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3BA537F1C1CB81100B2FB22 /* CollectionViewController.swift */; };
 		D3BA53821C1CBEBE00B2FB22 /* PinAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3BA53811C1CBEBE00B2FB22 /* PinAnnotation.swift */; };
@@ -58,6 +59,7 @@
 		D303AD9C1C181F6700CDC399 /* utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = utilities.swift; sourceTree = "<group>"; };
 		D303AD9E1C182CC500CDC399 /* FlickrObjects.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlickrObjects.swift; sourceTree = "<group>"; };
 		D33672081C18C5E00011914C /* SearchOperation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchOperation.swift; sourceTree = "<group>"; };
+		D34DF4851C2D766D006E25FF /* ErrorAwareOperation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ErrorAwareOperation.swift; sourceTree = "<group>"; };
 		D35BD9201C1DA99700866F2C /* DownloadFilesOperation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DownloadFilesOperation.swift; sourceTree = "<group>"; };
 		D35BD9231C1DB61700866F2C /* ConcurrentDownloadOperation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConcurrentDownloadOperation.swift; sourceTree = "<group>"; };
 		D35BD9251C20AFE000866F2C /* ConcurrentOperation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConcurrentOperation.swift; sourceTree = "<group>"; };
@@ -81,7 +83,7 @@
 		D382CDDE1C09EDB900BCE3FB /* Pin.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Pin.swift; sourceTree = "<group>"; };
 		D382CDDF1C09EDB900BCE3FB /* Photo+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Photo+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		D382CDE01C09EDB900BCE3FB /* Photo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Photo.swift; sourceTree = "<group>"; };
-		D3BA537B1C1C5A9200B2FB22 /* OperationMap.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OperationMap.swift; sourceTree = "<group>"; };
+		D3BA537B1C1C5A9200B2FB22 /* QueueManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QueueManager.swift; sourceTree = "<group>"; };
 		D3BA537D1C1C5DBB00B2FB22 /* Constant.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constant.swift; sourceTree = "<group>"; };
 		D3BA537F1C1CB81100B2FB22 /* CollectionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionViewController.swift; sourceTree = "<group>"; };
 		D3BA53811C1CBEBE00B2FB22 /* PinAnnotation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PinAnnotation.swift; sourceTree = "<group>"; };
@@ -122,6 +124,7 @@
 				D35BD9231C1DB61700866F2C /* ConcurrentDownloadOperation.swift */,
 				D35BD9251C20AFE000866F2C /* ConcurrentOperation.swift */,
 				D35BD9271C20B3AD00866F2C /* DownloadSingleFileOperation.swift */,
+				D34DF4851C2D766D006E25FF /* ErrorAwareOperation.swift */,
 			);
 			name = Operations;
 			sourceTree = "<group>";
@@ -208,7 +211,7 @@
 		D3BA537A1C1C5A4C00B2FB22 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				D3BA537B1C1C5A9200B2FB22 /* OperationMap.swift */,
+				D3BA537B1C1C5A9200B2FB22 /* QueueManager.swift */,
 				D3BA537D1C1C5DBB00B2FB22 /* Constant.swift */,
 				D3BA53811C1CBEBE00B2FB22 /* PinAnnotation.swift */,
 			);
@@ -373,11 +376,12 @@
 				D382CDAB1C09EA3900BCE3FB /* AppDelegate.swift in Sources */,
 				D382CDB31C09EA3900BCE3FB /* VirtualTourist.xcdatamodeld in Sources */,
 				D35BD9211C1DA99700866F2C /* DownloadFilesOperation.swift in Sources */,
+				D34DF4861C2D766D006E25FF /* ErrorAwareOperation.swift in Sources */,
 				D35BD9281C20B3AD00866F2C /* DownloadSingleFileOperation.swift in Sources */,
 				D382CDE21C09EDB900BCE3FB /* Pin.swift in Sources */,
 				D303AD9F1C182CC500CDC399 /* FlickrObjects.swift in Sources */,
 				D3E3A7DF1C0D8846003F64B1 /* FlickrClient.swift in Sources */,
-				D3BA537C1C1C5A9200B2FB22 /* OperationMap.swift in Sources */,
+				D3BA537C1C1C5A9200B2FB22 /* QueueManager.swift in Sources */,
 				D3E3A7E11C0D93A4003F64B1 /* extension-Dict.swift in Sources */,
 				D382CDE11C09EDB900BCE3FB /* Pin+CoreDataProperties.swift in Sources */,
 				D382CDDC1C09EAB500BCE3FB /* CoreDataStack.swift in Sources */,

@@ -30,6 +30,7 @@ class Pin: NSManagedObject {
 		}
 		var url: NSURL? = Constant.documentDir.URLByAppendingPathComponent(self.relativePath + "-\(version)")
 		do {
+			// Create the directory if it doesn't already exist (if it does exist, this will not throw an error):
 			try NSFileManager.defaultManager().createDirectoryAtURL(url!, withIntermediateDirectories: true, attributes: nil)
 		} catch {
 			print("There was an error creating (or ensuring that it exists) the directory for URL: \(url): \(error)")
