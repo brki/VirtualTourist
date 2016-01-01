@@ -11,12 +11,14 @@
     <entity name="Pin" representedClassName=".Pin" syncable="YES">
         <attribute name="latitude" attributeType="Double" defaultValueString="0.0" syncable="YES"/>
         <attribute name="longitude" attributeType="Double" defaultValueString="0.0" syncable="YES"/>
+        <attribute name="photoProcessingError" optional="YES" attributeType="Transformable" syncable="YES"/>
+        <attribute name="photoProcessingState" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
         <attribute name="photosVersion" attributeType="Integer 64" defaultValueString="1" syncable="YES"/>
         <attribute name="relativePath" attributeType="String" syncable="YES"/>
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Photo" inverseName="pin" inverseEntity="Photo" syncable="YES"/>
     </entity>
     <elements>
         <element name="Photo" positionX="-54" positionY="-9" width="128" height="135"/>
-        <element name="Pin" positionX="-63" positionY="-18" width="128" height="120"/>
+        <element name="Pin" positionX="-63" positionY="-18" width="128" height="150"/>
     </elements>
 </model>

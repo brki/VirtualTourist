@@ -20,6 +20,4 @@ extension Photo {
 	@NSManaged var downloaded: Bool
 	@NSManaged var title: String?
 	@NSManaged var pin: Pin?
-
-
 }

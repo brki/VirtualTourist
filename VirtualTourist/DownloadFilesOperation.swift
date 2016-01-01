@@ -17,6 +17,14 @@ private var downloadFilesOperationObserverContext = 0
 
 class DownloadFilesOperation: ConcurrentDownloadOperation {
 
+	enum ErrorCode: Int {
+		case ErrorGettingSavePath = 1
+		case NoData = 2
+		case PinHasNoContext = 3
+		case SavingPinContextFailed = 4
+		case SavingPinParentContextFailed = 5
+	}
+
 	let client = FlickrClient.sharedClient
 	let photoSize: Photo.PhotoSize
 	let pin: Pin
@@ -39,7 +47,7 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 	override func startExecution() {
 
 		guard let pinContext = pin.managedObjectContext else {
-			self.error = makeNSError(1, localizedDescription: "Pin is not associated with a context")
+			self.error = makeNSError(ErrorCode.PinHasNoContext.rawValue, localizedDescription: "Pin is not associated with a context")
 			self.handleEndOfExecution()
 			return
 		}
@@ -47,14 +55,16 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 		let fetchRequest = NSFetchRequest(entityName: "Photo")
 		fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [pin])
 		var photoList: [Photo]!
-		pinContext.performBlock {
+// This block-ing isn't necessary, I think:
+//		pinContext.performBlock {
 			do {
 				photoList = try pinContext.executeFetchRequest(fetchRequest) as! [Photo]
-				self.downloadPhotos(photoList)
+				downloadPhotos(photoList)
+//				self.downloadPhotos(photoList)
 			} catch {
 				print("Error fetching photoList: \(error)")
 			}
-		}
+//		}
 
 	}
 
@@ -78,7 +88,7 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 			}
 
 			guard let fileURL = saveToFileURL else {
-				self.error = self.makeNSError(1, localizedDescription: "Unable to get file saving path for photo with id \(photoID)")
+				self.error = self.makeNSError(ErrorCode.ErrorGettingSavePath.rawValue, localizedDescription: "Unable to get file saving path for photo with id \(photoID)")
 				self.handleEndOfExecution()
 				return
 			}
@@ -96,7 +106,7 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 				}
 
 				guard let fileData = data else {
-					self.error = self.makeNSError(2, localizedDescription: "No data returned, no error information available")
+					self.error = self.makeNSError(ErrorCode.NoData.rawValue, localizedDescription: "No data returned, no error information available")
 					self.handleEndOfExecution()
 					return
 				}
@@ -110,7 +120,7 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 				}
 			}
 			
-			operation.addDependency(self)
+			//operation.addDependency(self)  // WTF?
 			operations.append(operation)
 		}
 
@@ -122,8 +132,30 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 	}
 
 	override func cleanup() {
+		print("In DownloadFilesOperation cleanup")  // TODO: remove
 		concurrentQueue.cancelAllOperations()
+		if let err = error {
+			pin.photoProcessingError = err
+			pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS
+		}
+		persistData()
 		super.cleanup()
+	}
+
+	func persistData() {
+		CoreDataStack.saveContext(pin.managedObjectContext!, includeParentContexts: true) { error, isChildContext in
+			guard let err = error else {
+				return
+			}
+
+			if isChildContext {
+				print("Error saving child context: \(err)")
+				self.error = self.makeNSError(ErrorCode.SavingPinContextFailed.rawValue, localizedDescription: "Unable to persist photo downloaded state to child context", underlyingError: err)
+			} else {
+				print("Error saving parent context: \(err)")
+				self.error = self.makeNSError(ErrorCode.SavingPinParentContextFailed.rawValue, localizedDescription: "Unable to persist photo downloaded state to parent context", underlyingError: err)
+			}
+		}
 	}
 
 	override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {

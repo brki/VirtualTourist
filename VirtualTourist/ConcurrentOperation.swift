@@ -76,4 +76,10 @@ class ConcurrentOperation: ErrorAwareOperation {
 		executing = false
 		finished = true
 	}
+
+	/**
+	Subclasses can override this to execute the necessary cleanup for when a task
+	has finished (successfully or unsuccessfully, cancelled or not).
+	*/
+	func cleanup() {}
 }

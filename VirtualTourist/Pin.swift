@@ -12,6 +12,15 @@ import CoreData
 
 class Pin: NSManagedObject {
 
+	static let PHOTO_PROCESSING_STATE_NEW = 0
+	static let PHOTO_PROCESSING_STATE_FETCHING_DATA = 1
+	static let PHOTO_PROCESSING_STATE_FETCHING_PHOTOS = 2
+	static let PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA = 3
+	static let PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS = 4
+	static let PHOTO_PROCESSING_STATE_COMPLETE = 5
+
+	// todo: add errorWasHandled property?
+
 	override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
 		super.init(entity: entity, insertIntoManagedObjectContext: context)
 	}
@@ -52,5 +61,4 @@ class Pin: NSManagedObject {
 			return false
 		}
 	}
-
 }

@@ -10,7 +10,52 @@ import CoreData
 
 class CoreDataStack {
 
+	typealias saveCompletionHandler = ((error: NSError?, isChildContext: Bool) -> Void)
+	
 	static let sharedInstance = CoreDataStack()
+
+	static func childContextForContext(context: NSManagedObjectContext, concurrencyType: NSManagedObjectContextConcurrencyType = .MainQueueConcurrencyType) -> NSManagedObjectContext {
+		let childContext = NSManagedObjectContext(concurrencyType: concurrencyType)
+		childContext.parentContext = context
+		return childContext
+	}
+
+	static func saveContext(context: NSManagedObjectContext, includeParentContexts: Bool = true, handler: saveCompletionHandler? = nil) {
+
+		let isChildContext = context.parentContext != nil
+
+		func saveCurrentContext(completion: () -> Void) {
+			var nserror: NSError?
+			if context.hasChanges {
+				do {
+					try context.save()
+				} catch {
+					nserror = error as NSError
+					handler?(error: nserror, isChildContext: isChildContext)
+				}
+				completion()
+			}
+		}
+
+		if isChildContext {
+			context.performBlock {
+				saveCurrentContext {
+					if includeParentContexts, let parentContext = context.parentContext {
+						CoreDataStack.saveContext(parentContext, includeParentContexts: true, handler: handler)
+					} else {
+						handler?(error: nil, isChildContext: true)
+					}
+				}
+			}
+		} else {
+			context.performBlock {
+				saveCurrentContext {
+					handler?(error: nil, isChildContext: false)
+				}
+			}
+		}
+		
+	}
 
 	lazy var applicationDocumentsDirectory: NSURL = {
 		// The directory the application uses to store the Core Data store file. This code uses a directory named "ch.truckin.VirtualTourist" in the application's documents Application Support directory.
@@ -58,24 +103,21 @@ class CoreDataStack {
 	}()
 
 	func childContext(concurrencyType: NSManagedObjectContextConcurrencyType) -> NSManagedObjectContext {
-		let context = NSManagedObjectContext(concurrencyType: concurrencyType)
-		context.parentContext = managedObjectContext
-		return context
+		return CoreDataStack.childContextForContext(managedObjectContext, concurrencyType: concurrencyType)
 	}
 
-	// MARK: - Core Data Saving support
+	/**
+	Returns a new managed object context which operates on the main queue.  It is a child context; it's
+	parent context operates on a private queue.
+	*/
+	func independantChildContext() -> NSManagedObjectContext {
+		let coordinator = self.persistentStoreCoordinator
+		let managedObjectContext = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
+		managedObjectContext.persistentStoreCoordinator = coordinator
 
-	func saveContext () {
-		if managedObjectContext.hasChanges {
-			do {
-				try managedObjectContext.save()
-			} catch {
-				// Replace this implementation with code to handle the error appropriately.
-				// abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-				let nserror = error as NSError
-				NSLog("Unresolved error \(nserror), \(nserror.userInfo)")
-				abort()
-			}
-		}
+		let childContext = NSManagedObjectContext(concurrencyType: .MainQueueConcurrencyType)
+		childContext.parentContext = managedObjectContext
+		return childContext
 	}
+
 }

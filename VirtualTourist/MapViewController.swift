@@ -13,6 +13,8 @@ import CoreData
 // TODO perhaps: use a custom annotationview that hold a reference to the pin, to allow deleting the pin
 //               via a button on the callout view.
 
+private var PinStatusContext = 0
+
 class MapViewController: UIViewController {
 
 	let ANNOTATION_VIEW_IDENTIFIER = "mvc_avi"
@@ -84,49 +86,83 @@ class MapViewController: UIViewController {
 	func getAssociatedPhotos(pin: Pin) {
 		let searchOperation = SearchOperation(pin: pin, maxPhotos: Constant.MaxPhotosPerPin)
 		searchOperation.completionBlock = {
-
-			if let error = searchOperation.error {
-				self.showErrorAlert("Fetch error", message: error.localizedDescription)
-				return
-			}
-
-			guard let pinContext = pin.managedObjectContext else {
-				self.showErrorAlert("Data Storage error", message: "Pin is not associated with a context")
-				return
-			}
-
-			var childContextSaved = false
-			pinContext.performBlockAndWait {
-				do {
-					// Push the changes up to the parent context:
-					try pinContext.save()
-					childContextSaved = true
-				} catch {
-					print("Error saving child context: \(error)")
-					self.showErrorAlert("Error saving fetched photo information", message: "Unable to stage data for saving")
+			pin.managedObjectContext?.performBlock {
+				guard pin.photoProcessingError == nil else {
+					return
+				}
+				if !searchOperation.cancelled {
+					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS
 				}
 			}
-			guard childContextSaved else {
-				return
-			}
-			// Save the parent context on the private queue:
-			let privateQueueContext = pinContext.parentContext!
-			privateQueueContext.performBlock {
-				do {
-					try privateQueueContext.save()
-				} catch {
-					print("Error saving parent context: \(error)")
-					self.showErrorAlert("Error saving fetched photo information", message: "Unable to persist data")
+		}
+		let downloadFilesOperation = DownloadFilesOperation(pin: pin)
+		downloadFilesOperation.addDependency(searchOperation)
+		downloadFilesOperation.completionBlock = {
+			pin.managedObjectContext?.performBlock {
+				guard pin.photoProcessingError == nil else {
+					return
+				}
+				if !searchOperation.cancelled {
+					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_COMPLETE
 				}
 			}
 		}
 
-
-		let downloadFilesOperation = DownloadFilesOperation(pin: pin)
-		downloadFilesOperation.addDependency(searchOperation)
-
+		// Monitor pin.photoProcessingState, so that an error can be reported if one happened.
+		pin.managedObjectContext?.performBlockAndWait {
+			pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA
+		}
+		pin.addObserver(self, forKeyPath: "photosProcessingState", options: NSKeyValueObservingOptions.New, context: &PinStatusContext)
+		
 		QueueManager.serialQueueForPin(pin).addOperation(searchOperation)
 		QueueManager.filesDownloadQueue.addOperation(downloadFilesOperation)
+	}
+
+	/**
+	If an error occurred while downloading the photos, notify the user.
+	*/
+	override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+		guard context == &PinStatusContext else {
+			super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
+			return
+		}
+
+		guard let state = change?[NSKeyValueChangeNewKey] as? Int else {
+			return
+		}
+
+		guard let pin = object as? Pin else {
+			print("MapViewController.observeValueForKeyPath: unexpected object value: \(object)")
+			return
+		}
+
+		var finished = false
+
+		switch state {
+		case Pin.PHOTO_PROCESSING_STATE_COMPLETE:
+			// Data and photo downloading tasks completed without error.
+			finished = true
+
+		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
+			finished = true
+			guard let error = pin.photoProcessingError else {
+				break
+			}
+
+			pin.managedObjectContext?.performBlockAndWait {
+				pin.photoProcessingError = nil
+			}
+
+			let title = state == Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA ? "Error fetching data" : "Error while downloading photos"
+			self.showErrorAlert(title, message: error.localizedDescription, completion: nil)
+
+		default:
+			break
+		}
+
+		if finished {
+			pin.removeObserver(self, forKeyPath: "photosProcessingState", context: &PinStatusContext)
+		}
 	}
 
 	func addAnnotationForPin(pin: Pin) -> MKPointAnnotation {

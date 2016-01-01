@@ -10,6 +10,16 @@ import Foundation
 import CoreData
 
 class SearchOperation: ConcurrentDownloadOperation {
+
+	enum ErrorCode: Int {
+		case ErrorFetchingPhotoList = 1
+		case UnexpectedHTTPResponseCode = 2
+		case UnexpectedHTTPResponseFormat = 3
+		case PinHasNoContext = 4
+		case SavingPinContextFailed = 5
+		case SavingPinParentContextFailed = 6
+	}
+
 	var pin: Pin
 	let client = FlickrClient.sharedClient
 	var photosAdded = 0
@@ -144,7 +154,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 			}
 
 			if let err = error {
-				self.error = self.makeNSError(1, localizedDescription: "Error fetching photo list", underlyingError: err)
+				self.error = self.makeNSError(ErrorCode.ErrorFetchingPhotoList.rawValue, localizedDescription: "Error fetching photo list", underlyingError: err)
 				self.cancel()
 				return
 			}
@@ -153,13 +163,13 @@ class SearchOperation: ConcurrentDownloadOperation {
 			let httpResponse = response!
 
 			guard httpResponse.statusCode == 200 else {
-				self.error = self.makeNSError(2, localizedDescription: "Unexpected response code: \(httpResponse.statusCode)")
+				self.error = self.makeNSError(ErrorCode.UnexpectedHTTPResponseCode.rawValue, localizedDescription: "Unexpected response code: \(httpResponse.statusCode)")
 				self.cancel()
 				return
 			}
 
 			guard let photosInfo = FlickrPhotoSearchResponse(jsonObject: jsonObject) else {
-				self.error = self.makeNSError(3, localizedDescription: "Unexpected response format")
+				self.error = self.makeNSError(ErrorCode.UnexpectedHTTPResponseFormat.rawValue, localizedDescription: "Unexpected response format")
 				self.cancel()
 				return
 			}
@@ -167,5 +177,40 @@ class SearchOperation: ConcurrentDownloadOperation {
 			successHandler(photosInfo)
 		}
 		return task
+	}
+
+	override func cleanup() {
+		print("In SearchOperation cleanup")  // TODO: remove
+		if let err = error {
+			pin.photoProcessingError = err
+			pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA
+		}
+		persistData()
+		super.cleanup()
+	}
+
+	func persistData() {
+		guard !cancelled && error == nil else {
+			return
+		}
+
+		guard let pinContext = pin.managedObjectContext else {
+			error = makeNSError(ErrorCode.PinHasNoContext.rawValue, localizedDescription: "Data Storage error (pin is not associated with a context)")
+			return
+		}
+
+		CoreDataStack.saveContext(pinContext, includeParentContexts: true) { error, isChildContext in
+			guard let err = error else {
+				return
+			}
+
+			if isChildContext {
+				print("Error saving child context: \(err)")
+				self.error = self.makeNSError(ErrorCode.SavingPinContextFailed.rawValue, localizedDescription: "Unable to stage photos data for saving", underlyingError: err)
+			} else {
+				print("Error saving parent context: \(err)")
+				self.error = self.makeNSError(ErrorCode.SavingPinParentContextFailed.rawValue, localizedDescription: "Unable to persist photos data", underlyingError: err)
+			}
+		}
 	}
 }
