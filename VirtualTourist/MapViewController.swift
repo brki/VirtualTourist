@@ -77,45 +77,85 @@ class MapViewController: UIViewController {
 			}
 			draggedAnnotation = addAnnotationForPin(draggedPin!)
 		} else if sender.state == .Ended {
-			getAssociatedPhotos(draggedPin!)
+			let droppedPin = draggedPin!
+			context.performBlockAndWait {
+				droppedPin.latitude = coordinate.latitude
+				droppedPin.longitude = coordinate.longitude
+			}
+			launchOperations(droppedPin)
 			draggedAnnotation = nil
 			draggedPin = nil
 		}
 	}
 
-	func getAssociatedPhotos(pin: Pin) {
-		let searchOperation = SearchOperation(pin: pin, maxPhotos: Constant.MaxPhotosPerPin)
-		searchOperation.completionBlock = {
-			pin.managedObjectContext?.performBlock {
-				guard pin.photoProcessingError == nil else {
-					return
-				}
-				if !searchOperation.cancelled {
-					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS
-				}
-			}
+	func launchOperations(pin: Pin) {
+		var state = -1
+		pin.managedObjectContext!.performBlockAndWait {
+			state = pin.photoProcessingState
 		}
+
+		switch state {
+
+		case Pin.PHOTO_PROCESSING_STATE_NEW, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA:
+			let searchOperation = addSearchOperation(pin)
+			addDownloadOperation(pin, dependency: searchOperation)
+
+		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
+			addDownloadOperation(pin)
+
+		case Pin.PHOTO_PROCESSING_STATE_COMPLETE:
+			// Nothing to do.
+			break
+
+		default:
+			// This was unexpected, and the rest of the function should not be executed:
+			print("Unexpected call to launchOperation with pin state: \(state)")
+			return
+		}
+
+		startMontoringPhotoProcessingState(pin)
+	}
+	
+	func addSearchOperation(pin: Pin) -> NSOperation {
+		let searchOperation = SearchOperation(pin: pin, maxPhotos: Constant.MaxPhotosPerPin)
+//		searchOperation.completionBlock = {
+//			pin.managedObjectContext?.performBlock {
+//				// If there was an error, the context will already have been saved:
+//				guard pin.photoProcessingError == nil else {
+//					return
+//				}
+//				CoreDataStack.saveContext(pin.managedObjectContext!)
+//			}
+//		}
+
+		QueueManager.serialQueueForPin(pin).addOperation(searchOperation)
+
+		return searchOperation
+	}
+
+	func addDownloadOperation(pin: Pin, dependency: NSOperation? = nil) {
 		let downloadFilesOperation = DownloadFilesOperation(pin: pin)
-		downloadFilesOperation.addDependency(searchOperation)
+		if let dependency = dependency {
+			downloadFilesOperation.addDependency(dependency)
+		}
 		downloadFilesOperation.completionBlock = {
 			pin.managedObjectContext?.performBlock {
 				guard pin.photoProcessingError == nil else {
 					return
 				}
-				if !searchOperation.cancelled {
+				if !downloadFilesOperation.cancelled {
 					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_COMPLETE
+					CoreDataStack.saveContext(pin.managedObjectContext!)
 				}
 			}
 		}
 
-		// Monitor pin.photoProcessingState, so that an error can be reported if one happened.
-		pin.managedObjectContext?.performBlockAndWait {
-			pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA
-		}
-		pin.addObserver(self, forKeyPath: "photosProcessingState", options: NSKeyValueObservingOptions.New, context: &PinStatusContext)
-		
-		QueueManager.serialQueueForPin(pin).addOperation(searchOperation)
 		QueueManager.filesDownloadQueue.addOperation(downloadFilesOperation)
+	}
+
+	// Monitor pin.photoProcessingState, so that an error can be reported if one happened.
+	func startMontoringPhotoProcessingState(pin: Pin) {
+		pin.addObserver(self, forKeyPath: "photoProcessingState", options: NSKeyValueObservingOptions.New, context: &PinStatusContext)
 	}
 
 	/**
@@ -155,13 +195,16 @@ class MapViewController: UIViewController {
 
 			let title = state == Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA ? "Error fetching data" : "Error while downloading photos"
 			self.showErrorAlert(title, message: error.localizedDescription, completion: nil)
+			if let underlyingError = error.userInfo["underlyingError"] {
+				print("Error while fetching data / photos: \(underlyingError)")
+			}
 
 		default:
 			break
 		}
 
 		if finished {
-			pin.removeObserver(self, forKeyPath: "photosProcessingState", context: &PinStatusContext)
+			pin.removeObserver(self, forKeyPath: "photoProcessingState", context: &PinStatusContext)
 		}
 	}
 
@@ -200,6 +243,9 @@ extension MapViewController: MKMapViewDelegate {
 				return
 		}
 		destinationVC.pin = pinAnnotation.pin
+
+		// In case the photo data / photos have not yet been downloaded (for example due to a previous network error), retry:
+		launchOperations(pinAnnotation.pin)
 
 		// Deselect the annotation before pushing, so that it won't be selected when returning to this view controller:
 		mapView.selectedAnnotations.removeAll()

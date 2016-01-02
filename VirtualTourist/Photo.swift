@@ -17,6 +17,8 @@ class Photo: NSManagedObject {
 		case Medium = "m"
 	}
 
+	static var persistentStoreContext = CoreDataStack.sharedInstance.managedObjectContext
+
 	override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
 		super.init(entity: entity, insertIntoManagedObjectContext: context)
 	}
@@ -43,4 +45,5 @@ class Photo: NSManagedObject {
 		}
 		return pinDirectory.URLByAppendingPathComponent("\(self.flickrID).jpg")
 	}
+
 }

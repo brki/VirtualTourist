@@ -17,40 +17,50 @@ class CollectionViewController: UIViewController {
 	@IBOutlet weak var activityIndicator: UIActivityIndicatorView!
 
 	var pin: Pin!
+	var hasData = false
+
+	var queuedChanges = [FetchedResultChange]()
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		collectionView.dataSource = self
 	}
 
+	lazy var fetchedResultsController: NSFetchedResultsController = {
+		let context = self.pin.managedObjectContext!
+		let fetchRequest = NSFetchRequest(entityName: "Photo")
+		fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [self.pin])
+		fetchRequest.sortDescriptors = [NSSortDescriptor(key: "order", ascending: true)]
+		let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: context, sectionNameKeyPath: nil, cacheName: nil)
+		do {
+			try frc.performFetch()
+		} catch {
+			print("CollectionViewController: error on fetchedResultsController.performFetch: \(error)")
+		}
+		frc.delegate = self
+		return frc
+	}()
+
 	override func viewWillAppear(animated: Bool) {
 
-		// If an ongoing SearchOperation exists for this pin.photosVersion, show a spinner indicator and wait until
+		// If an ongoing SearchOperation exists for this pin.photosVersion, show a spinner indicator and wait until there is data.
 		var state = -1
 
 		pin.managedObjectContext?.performBlockAndWait {
 			state = self.pin.photoProcessingState
 		}
+
 		switch state {
 
-		case Pin.PHOTO_PROCESSING_STATE_NEW, Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA:
+		case Pin.PHOTO_PROCESSING_STATE_NEW, Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
+
+			pin.addObserver(self, forKeyPath: "photoProcessingState", options: NSKeyValueObservingOptions.New, context: &PinStatusContext)
 			showActivityIndicator()
-			pin.addObserver(self, forKeyPath: "photosProcessingState", options: NSKeyValueObservingOptions.New, context: &PinStatusContext)
 
-		case Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS:
-			// Photo data is available, and photos are currently being downloaded.
-			break
-
-		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA:
-			// TODO: or should this be checked by parent VC before calling?
-			print("Todo: retry fetching data + downloading photos")
-
-		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
-			// TODO: or should this be checked by parent VC before calling?
-			print("Todo: retry downloading photos")
-
-		case Pin.PHOTO_PROCESSING_STATE_COMPLETE:
+		case Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS, Pin.PHOTO_PROCESSING_STATE_COMPLETE:
+			hasData = true
 			showPhotos()
+			break
 
 		default:
 			print("Unexpected photo processing state: \(pin.photoProcessingState)")
@@ -76,28 +86,32 @@ class CollectionViewController: UIViewController {
 		}
 
 		switch state {
-		case Pin.PHOTO_PROCESSING_STATE_COMPLETE:
+		case Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS, Pin.PHOTO_PROCESSING_STATE_COMPLETE:
+			hasData = true
 			removePinObserver()
-			showPhotos()
+			async_main {
+				self.showCollectionView()
+				self.showPhotos()
+			}
 
 		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
 			// Pop this view controller off the stack, the presenting view controller will show the error.
 			// TODO: revisit this.  Should parent VC method be invoked to start downloading photos, so that this logic remains valid?
-			navigationController?.popViewControllerAnimated(true)
+			async_main {
+				self.navigationController?.popViewControllerAnimated(true)
+			}
 		default:
 			break
 		}
 	}
 
 	func removePinObserver() {
-		pin.removeObserver(self, forKeyPath: "photosProcessingState", context: &PinStatusContext)
+		pin.removeObserver(self, forKeyPath: "photoProcessingState", context: &PinStatusContext)
 	}
 
 	func showPhotos() {
+		collectionView.reloadData()
 		print("in showPhotos(), pin status: \(pin.photoProcessingState)")
-		let context = pin.managedObjectContext!
-		let fetchRequest = NSFetchRequest(entityName: "Photo")
-		fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [pin])
 	}
 
 	func showCollectionView() {
@@ -116,15 +130,66 @@ class CollectionViewController: UIViewController {
 extension CollectionViewController: UICollectionViewDataSource {
 
 	func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-		return 20
+		guard hasData else {
+			return 0
+		}
+		return fetchedResultsController.fetchedObjects?.count ?? 0
 	}
 
 	func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-		let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath)
-		let imageView = UIImageView(frame: cell.contentView.frame)
-		imageView.contentMode = .ScaleAspectFit
-		imageView.image = UIImage(named: "Placeholder")
-		cell.contentView.addSubview(imageView)
+
+		let photo = fetchedResultsController.objectAtIndexPath(indexPath) as! Photo
+
+		let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! CollectionViewCell
+
+		if photo.downloaded,
+			let path = photo.fileURL?.path,
+			let image = UIImage(contentsOfFile: path) {
+
+			cell.imageView.image = image
+		} else {
+			cell.imageView.image = UIImage(named: "Placeholder")
+		}
 		return cell
+	}
+}
+
+extension CollectionViewController: NSFetchedResultsControllerDelegate {
+
+	func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+		queuedChanges.append(
+			FetchedResultChange(object: anObject, changeType: type, indexPath: indexPath, newIndexPath: newIndexPath)
+		)
+	}
+
+	func controllerDidChangeContent(controller: NSFetchedResultsController) {
+		var updated = [NSIndexPath]()
+		var deleted = [NSIndexPath]()
+		let visiblePaths = collectionView.indexPathsForVisibleItems()
+		while let change = self.queuedChanges.popLast() {
+			switch change.changeType {
+
+			case .Update:
+				if let indexPath = change.indexPath where visiblePaths.contains(indexPath) {
+					updated.append(change.indexPath!)
+				}
+
+			case .Delete:
+				deleted.append(change.indexPath!)
+				break
+
+			default:
+				print("Unexpected change type in controllerDidChangeContent: \(change)")
+			}
+
+		}
+
+		collectionView.performBatchUpdates({
+
+			self.collectionView.reloadItemsAtIndexPaths(updated)
+			self.collectionView.deleteItemsAtIndexPaths(deleted)
+
+			},
+			completion: nil)
 	}
 }

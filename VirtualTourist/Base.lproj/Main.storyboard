@@ -3,6 +3,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9529"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
     </dependencies>
     <scenes>
         <!--Map View Controller-->
@@ -54,7 +55,7 @@
         <scene sceneID="GeT-B3-v6Y">
             <objects>
                 <navigationController id="8Ol-EX-6QS" sceneMemberID="viewController">
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="2kr-e4-Aoh">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" barStyle="black" id="2kr-e4-Aoh">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
@@ -64,7 +65,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ymz-e2-N35" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-18" y="483"/>
+            <point key="canvasLocation" x="-220" y="463"/>
         </scene>
         <!--Collection View Controller-->
         <scene sceneID="1UL-hV-I8e">
@@ -78,9 +79,6 @@
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="eC4-e1-65o">
-                                <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
-                            </activityIndicatorView>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="Y3K-rr-Kce">
                                 <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="2" minimumInteritemSpacing="2" id="hd7-JU-gJ9">
@@ -90,8 +88,8 @@
                                     <inset key="sectionInset" minX="2" minY="0.0" maxX="2" maxY="0.0"/>
                                 </collectionViewFlowLayout>
                                 <cells>
-                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleAspectFit" reuseIdentifier="PhotoCell" id="8JI-cv-KAH">
-                                        <rect key="frame" x="2" y="0.0" width="200" height="200"/>
+                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleAspectFit" reuseIdentifier="PhotoCell" id="8JI-cv-KAH" customClass="CollectionViewCell" customModule="VirtualTourist" customModuleProvider="target">
+                                        <rect key="frame" x="2" y="64" width="200" height="200"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
                                             <rect key="frame" x="0.0" y="0.0" width="200" height="200"/>
@@ -102,13 +100,18 @@
                                     </collectionViewCell>
                                 </cells>
                             </collectionView>
+                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="eC4-e1-65o">
+                                <rect key="frame" x="290" y="290" width="20" height="20"/>
+                            </activityIndicatorView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
                             <constraint firstItem="Y3K-rr-Kce" firstAttribute="leading" secondItem="jgv-oB-OWi" secondAttribute="leading" id="4xg-yD-A61"/>
+                            <constraint firstItem="eC4-e1-65o" firstAttribute="centerX" secondItem="jgv-oB-OWi" secondAttribute="centerX" id="CGM-ZR-XCd"/>
                             <constraint firstAttribute="trailing" secondItem="Y3K-rr-Kce" secondAttribute="trailing" id="K63-QF-sN5"/>
+                            <constraint firstItem="Y3K-rr-Kce" firstAttribute="top" secondItem="jgv-oB-OWi" secondAttribute="topMargin" id="Wo5-fu-UeB"/>
                             <constraint firstItem="iFH-vf-YnX" firstAttribute="top" secondItem="Y3K-rr-Kce" secondAttribute="bottom" id="a8A-Ve-5m3"/>
-                            <constraint firstItem="Y3K-rr-Kce" firstAttribute="top" secondItem="jgv-oB-OWi" secondAttribute="top" id="fSo-my-x14"/>
+                            <constraint firstItem="eC4-e1-65o" firstAttribute="centerY" secondItem="jgv-oB-OWi" secondAttribute="centerY" id="xqi-Bc-7Og"/>
                         </constraints>
                     </view>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" barStyle="black" prompted="NO"/>
@@ -119,7 +122,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k0p-Dz-Th9" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1412" y="547"/>
+            <point key="canvasLocation" x="1165" y="463"/>
         </scene>
     </scenes>
 </document>

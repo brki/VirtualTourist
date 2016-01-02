@@ -61,20 +61,23 @@ class ConcurrentOperation: ErrorAwareOperation {
 
 	override func cancel() {
 		objc_sync_enter(self)
-		defer {
-			objc_sync_exit(self)
-		}
-		handleEndOfExecution()
 		super.cancel()
+		handleEndOfExecution()
+		objc_sync_exit(self)
 	}
 
 	func handleEndOfExecution() {
-		if finished { return }
-		cleanup()
+		objc_sync_enter(self)
 
-		// Trigger KVO notifications:
-		executing = false
-		finished = true
+		if !finished {
+			cleanup()
+
+			// Trigger KVO notifications:
+			executing = false
+			finished = true
+		}
+		
+		objc_sync_exit(self)
 	}
 
 	/**

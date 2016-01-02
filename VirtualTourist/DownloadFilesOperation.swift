@@ -23,6 +23,7 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 		case PinHasNoContext = 3
 		case SavingPinContextFailed = 4
 		case SavingPinParentContextFailed = 5
+		case ErrorFetchingPhotoInfo = 6
 	}
 
 	let client = FlickrClient.sharedClient
@@ -35,6 +36,8 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 		self.photoSize = photoSize
 
 		super.init()
+		self.errorDomain = "DownloadFilesOperation"
+		self.shoudSetErrorIfAnyDependencyHasError = false
 
 		// Add an observer so that this operation can be marked as finished when the queue operation count drops to zero.
 		concurrentQueue.addObserver(self, forKeyPath: "operationCount", options: .New, context: &downloadFilesOperationObserverContext)
@@ -52,19 +55,38 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 			return
 		}
 
-		let fetchRequest = NSFetchRequest(entityName: "Photo")
-		fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [pin])
-		var photoList: [Photo]!
-// This block-ing isn't necessary, I think:
-//		pinContext.performBlock {
+		var photoList: [Photo]?
+		var fetchError: NSError?
+		pinContext.performBlockAndWait {
+			let fetchRequest = NSFetchRequest(entityName: "Photo")
+			fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [self.pin])
+			fetchRequest.sortDescriptors = [NSSortDescriptor(key: "order", ascending: true)]
 			do {
-				photoList = try pinContext.executeFetchRequest(fetchRequest) as! [Photo]
-				downloadPhotos(photoList)
-//				self.downloadPhotos(photoList)
-			} catch {
-				print("Error fetching photoList: \(error)")
+				photoList = try pinContext.executeFetchRequest(fetchRequest) as? [Photo]
+				self.pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS
+			} catch let error as NSError {
+				fetchError = error
 			}
-//		}
+		}
+
+		if self.cancelled {
+			return
+		}
+
+		if let error = fetchError {
+			print("Error fetching photoList: \(error)")
+			self.error = makeNSError(ErrorCode.ErrorFetchingPhotoInfo.rawValue, localizedDescription: "Error fetching photo information", underlyingError: error)
+			handleEndOfExecution()
+			return
+		}
+
+		if let photos = photoList {
+			if photos.count == 0 {
+				handleEndOfExecution()
+			} else {
+				downloadPhotos(photos)
+			}
+		}
 
 	}
 
@@ -120,7 +142,6 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 				}
 			}
 			
-			//operation.addDependency(self)  // WTF?
 			operations.append(operation)
 		}
 
@@ -133,10 +154,19 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 
 	override func cleanup() {
 		print("In DownloadFilesOperation cleanup")  // TODO: remove
+		objc_sync_enter(self)
+		defer {
+			objc_sync_exit(self)
+		}
+		if finished {
+			return
+		}
 		concurrentQueue.cancelAllOperations()
 		if let err = error {
-			pin.photoProcessingError = err
-			pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS
+			pin.managedObjectContext!.performBlockAndWait {
+				self.pin.photoProcessingError = err
+				self.pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS
+			}
 		}
 		persistData()
 		super.cleanup()

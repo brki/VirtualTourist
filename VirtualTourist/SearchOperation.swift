@@ -40,13 +40,16 @@ class SearchOperation: ConcurrentDownloadOperation {
 		self.pin = pin
 		self.maxPhotos = maxPhotos
 		super.init()
-		self.errorDomain = "ConcurrentDownloadOperation"
+		self.errorDomain = "SearchOperation"
 	}
 
 	override func startExecution() {
 		let firstPageTask = fetchResultsPage(1) { searchResponse in
 			if self.cancelled {
 				return
+			}
+			self.pin.managedObjectContext?.performBlockAndWait {
+				self.pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA
 			}
 			self.addPhotosToContext(searchResponse.photos)
 			self.pagesProcessed += 1
@@ -182,17 +185,19 @@ class SearchOperation: ConcurrentDownloadOperation {
 	override func cleanup() {
 		print("In SearchOperation cleanup")  // TODO: remove
 		if let err = error {
-			pin.photoProcessingError = err
-			pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA
+			pin.managedObjectContext?.performBlockAndWait {
+				self.pin.photoProcessingError = err
+				self.pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA
+			}
 		}
 		persistData()
 		super.cleanup()
 	}
 
 	func persistData() {
-		guard !cancelled && error == nil else {
-			return
-		}
+//		guard !cancelled && error == nil else {
+//			return
+//		}
 
 		guard let pinContext = pin.managedObjectContext else {
 			error = makeNSError(ErrorCode.PinHasNoContext.rawValue, localizedDescription: "Data Storage error (pin is not associated with a context)")

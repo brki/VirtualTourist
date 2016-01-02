@@ -52,7 +52,7 @@ class ErrorAwareOperation: NSOperation {
 	}
 
 	func makeNSError(code: Int, localizedDescription: String, underlyingError: NSError? = nil ) -> NSError {
-		var userInfo: [String: AnyObject] = [NSLocalizedDescriptionKey: localizedDescription]
+		var userInfo: [NSObject: AnyObject] = [NSLocalizedDescriptionKey: localizedDescription]
 		if let error = underlyingError {
 			userInfo["underlyingError"] = error
 		}
