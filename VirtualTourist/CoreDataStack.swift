@@ -20,6 +20,11 @@ class CoreDataStack {
 		return childContext
 	}
 
+	/**
+	Saves the given context and any ancestor contexts, too.
+	
+	The handler will be called when the final save completes, or when an error occurs.
+	*/
 	static func saveContext(context: NSManagedObjectContext, includeParentContexts: Bool = true, handler: saveCompletionHandler? = nil) {
 
 		let isChildContext = context.parentContext != nil
@@ -54,7 +59,6 @@ class CoreDataStack {
 				}
 			}
 		}
-		
 	}
 
 	lazy var applicationDocumentsDirectory: NSURL = {
@@ -105,19 +109,4 @@ class CoreDataStack {
 	func childContext(concurrencyType: NSManagedObjectContextConcurrencyType) -> NSManagedObjectContext {
 		return CoreDataStack.childContextForContext(managedObjectContext, concurrencyType: concurrencyType)
 	}
-
-	/**
-	Returns a new managed object context which operates on the main queue.  It is a child context; it's
-	parent context operates on a private queue.
-	*/
-	func independantChildContext() -> NSManagedObjectContext {
-		let coordinator = self.persistentStoreCoordinator
-		let managedObjectContext = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
-		managedObjectContext.persistentStoreCoordinator = coordinator
-
-		let childContext = NSManagedObjectContext(concurrencyType: .MainQueueConcurrencyType)
-		childContext.parentContext = managedObjectContext
-		return childContext
-	}
-
 }

@@ -54,17 +54,21 @@ class CollectionViewController: UIViewController {
 			state = self.pin.photoProcessingState
 		}
 
+		// The presenting view controller will have launched download operations, if necessary.
 		switch state {
-
-		case Pin.PHOTO_PROCESSING_STATE_NEW, Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
-
-			pin.addObserver(self, forKeyPath: "photoProcessingState", options: NSKeyValueObservingOptions.New, context: &PinStatusContext)
-			showActivityIndicator()
 
 		case Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS, Pin.PHOTO_PROCESSING_STATE_COMPLETE:
 			hasData = true
 			showPhotos()
-			break
+
+		case Pin.PHOTO_PROCESSING_STATE_NEW, Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA:
+			// Still waiting for data; add an observer so we'll get notified when there is data.
+			pin.addObserver(self, forKeyPath: "photoProcessingState", options: NSKeyValueObservingOptions.New, context: &PinStatusContext)
+			showActivityIndicator()
+
+		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
+			// Pop this view controller off the stack, the presenting view controller will show the error.
+			self.navigationController?.popViewControllerAnimated(true)
 
 		default:
 			print("Unexpected photo processing state: \(pin.photoProcessingState)")
@@ -72,7 +76,7 @@ class CollectionViewController: UIViewController {
 	}
 
 	/**
-	TODO: doc
+	Once data is available, present the collection view and photos / placeholder photos.
 	*/
 	override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
 		guard context == &PinStatusContext else {
@@ -90,6 +94,7 @@ class CollectionViewController: UIViewController {
 		}
 
 		switch state {
+
 		case Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS, Pin.PHOTO_PROCESSING_STATE_COMPLETE:
 			hasData = true
 			removePinObserver()
@@ -100,10 +105,10 @@ class CollectionViewController: UIViewController {
 
 		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
 			// Pop this view controller off the stack, the presenting view controller will show the error.
-			// TODO: revisit this.  Should parent VC method be invoked to start downloading photos, so that this logic remains valid?
 			async_main {
 				self.navigationController?.popViewControllerAnimated(true)
 			}
+
 		default:
 			break
 		}
@@ -127,8 +132,6 @@ class CollectionViewController: UIViewController {
 		activityIndicator.startAnimating()
 		collectionView.hidden = true
 	}
-
-
 }
 
 extension CollectionViewController: UICollectionViewDataSource {
@@ -140,12 +143,16 @@ extension CollectionViewController: UICollectionViewDataSource {
 		return fetchedResultsController.fetchedObjects?.count ?? 0
 	}
 
+	/**
+	Return custom CollectionViewCell with photo or placeholder image.
+	*/
 	func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
 
 		let photo = fetchedResultsController.objectAtIndexPath(indexPath) as! Photo
 
 		let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! CollectionViewCell
 
+		// Assumption: this is called on the main thread, and the photo's context is a main-thread context.
 		if photo.downloaded,
 			let path = photo.fileURL?.path,
 			let image = UIImage(contentsOfFile: path) {
@@ -160,12 +167,18 @@ extension CollectionViewController: UICollectionViewDataSource {
 
 extension CollectionViewController: NSFetchedResultsControllerDelegate {
 
+	/**
+	Collect changes that will be processed in controllerDidChangeContent().
+	*/
 	func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
 		queuedChanges.append(
 			FetchedResultChange(object: anObject, changeType: type, indexPath: indexPath, newIndexPath: newIndexPath)
 		)
 	}
 
+	/**
+	Apply all changes that have been collected.
+	*/
 	func controllerDidChangeContent(controller: NSFetchedResultsController) {
 		var updated = [NSIndexPath]()
 		var deleted = [NSIndexPath]()

@@ -72,6 +72,4 @@ class DownloadSingleFileOperation: ConcurrentOperation {
 		error = nil
 		super.cleanup()
 	}
-
-
 }

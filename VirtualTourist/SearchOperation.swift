@@ -125,11 +125,8 @@ class SearchOperation: ConcurrentDownloadOperation {
 	This is a thread safe method.
 	*/
 	func addPhoto(photo: FlickrPhoto) -> Bool {
-		var wasAdded = false
 		objc_sync_enter(self)
-		defer {
-			objc_sync_exit(self)
-		}
+		var wasAdded = false
 		if photosAdded < maxPhotos {
 			// TODO: first check if it exists in the managedObjectContext, before trying to add it.  Or use NSMergeByPropertyObjectTrumpMergePolicy, if possible.
 			let context = pin.managedObjectContext!
@@ -139,6 +136,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 			photosAdded += 1
 			wasAdded = true
 		}
+		objc_sync_exit(self)
 		return wasAdded
 	}
 
@@ -195,9 +193,6 @@ class SearchOperation: ConcurrentDownloadOperation {
 	}
 
 	func persistData() {
-//		guard !cancelled && error == nil else {
-//			return
-//		}
 
 		guard let pinContext = pin.managedObjectContext else {
 			error = makeNSError(ErrorCode.PinHasNoContext.rawValue, localizedDescription: "Data Storage error (pin is not associated with a context)")
