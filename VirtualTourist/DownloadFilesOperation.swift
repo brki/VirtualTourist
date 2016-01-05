@@ -44,10 +44,16 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 	}
 
 	deinit {
+		print("deinit DownloadFilesOperation object")
 		concurrentQueue.removeObserver(self, forKeyPath: "operationCount")
 	}
 
 	override func startExecution() {
+
+		// Release the dependencies so that they can be deinitialized already:
+		while dependencies.count > 0 {
+			removeDependency(dependencies[0])
+		}
 
 		guard let pinContext = pin.managedObjectContext else {
 			self.error = makeNSError(ErrorCode.PinHasNoContext.rawValue, localizedDescription: "Pin is not associated with a context")
@@ -63,7 +69,6 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 			fetchRequest.sortDescriptors = [NSSortDescriptor(key: "order", ascending: true)]
 			do {
 				photoList = try pinContext.executeFetchRequest(fetchRequest) as? [Photo]
-				self.pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS
 			} catch let error as NSError {
 				fetchError = error
 			}

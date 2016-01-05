@@ -11,6 +11,10 @@ import CoreData
 
 class SearchOperation: ConcurrentDownloadOperation {
 
+	deinit {
+		print("deinit of SearchOperation")
+	}
+	
 	enum ErrorCode: Int {
 		case ErrorFetchingPhotoList = 1
 		case UnexpectedHTTPResponseCode = 2
@@ -47,9 +51,6 @@ class SearchOperation: ConcurrentDownloadOperation {
 		let firstPageTask = fetchResultsPage(1) { searchResponse in
 			if self.cancelled {
 				return
-			}
-			self.pin.managedObjectContext?.performBlockAndWait {
-				self.pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA
 			}
 			self.addPhotosToContext(searchResponse.photos)
 			self.pagesProcessed += 1
@@ -125,8 +126,11 @@ class SearchOperation: ConcurrentDownloadOperation {
 	This is a thread safe method.
 	*/
 	func addPhoto(photo: FlickrPhoto) -> Bool {
-		objc_sync_enter(self)
 		var wasAdded = false
+		objc_sync_enter(self)
+		defer {
+			objc_sync_exit(self)
+		}
 		if photosAdded < maxPhotos {
 			// TODO: first check if it exists in the managedObjectContext, before trying to add it.  Or use NSMergeByPropertyObjectTrumpMergePolicy, if possible.
 			let context = pin.managedObjectContext!
@@ -136,7 +140,6 @@ class SearchOperation: ConcurrentDownloadOperation {
 			photosAdded += 1
 			wasAdded = true
 		}
-		objc_sync_exit(self)
 		return wasAdded
 	}
 

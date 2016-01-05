@@ -15,15 +15,22 @@ class CollectionViewController: UIViewController {
 
 	@IBOutlet weak var collectionView: UICollectionView!
 	@IBOutlet weak var activityIndicator: UIActivityIndicatorView!
+	@IBOutlet weak var messageLabel: UILabel!
 
 	var pin: Pin!
 	var hasData = false
+	var isObservingPinState = false
 
 	var queuedChanges = [FetchedResultChange]()
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		collectionView.dataSource = self
+		messageLabel.hidden = true
+	}
+
+	override func viewWillDisappear(animated: Bool) {
+		removePinObserver()
 	}
 
 	lazy var fetchedResultsController: NSFetchedResultsController = {
@@ -54,6 +61,7 @@ class CollectionViewController: UIViewController {
 			state = self.pin.photoProcessingState
 		}
 
+		print("viewWillAppear: state: \(state)")
 		// The presenting view controller will have launched download operations, if necessary.
 		switch state {
 
@@ -64,6 +72,7 @@ class CollectionViewController: UIViewController {
 		case Pin.PHOTO_PROCESSING_STATE_NEW, Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA:
 			// Still waiting for data; add an observer so we'll get notified when there is data.
 			pin.addObserver(self, forKeyPath: "photoProcessingState", options: NSKeyValueObservingOptions.New, context: &PinStatusContext)
+			isObservingPinState = true
 			showActivityIndicator()
 
 		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
@@ -99,7 +108,6 @@ class CollectionViewController: UIViewController {
 			hasData = true
 			removePinObserver()
 			async_main {
-				self.showCollectionView()
 				self.showPhotos()
 			}
 
@@ -115,10 +123,18 @@ class CollectionViewController: UIViewController {
 	}
 
 	func removePinObserver() {
-		pin.removeObserver(self, forKeyPath: "photoProcessingState", context: &PinStatusContext)
+		if isObservingPinState {
+			self.isObservingPinState = false
+			pin.removeObserver(self, forKeyPath: "photoProcessingState", context: &PinStatusContext)
+		}
 	}
 
 	func showPhotos() {
+		guard let count = fetchedResultsController.fetchedObjects?.count where count > 0 else {
+			showNoPhotosMessage()
+			return
+		}
+		showCollectionView()
 		collectionView.reloadData()
 		print("in showPhotos(), pin status: \(pin.photoProcessingState)")
 	}
@@ -131,6 +147,11 @@ class CollectionViewController: UIViewController {
 	func showActivityIndicator() {
 		activityIndicator.startAnimating()
 		collectionView.hidden = true
+	}
+
+	func showNoPhotosMessage() {
+		collectionView.hidden = true
+		messageLabel.hidden = false
 	}
 }
 
@@ -196,7 +217,7 @@ extension CollectionViewController: NSFetchedResultsControllerDelegate {
 				break
 
 			default:
-				print("Unexpected change type in controllerDidChangeContent: \(change)")
+				print("Unexpected change type in controllerDidChangeContent: \(change.changeType.rawValue), change: \(change)")
 			}
 
 		}

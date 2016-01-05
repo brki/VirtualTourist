@@ -28,18 +28,32 @@ class PinPhotoDownloadManager {
 
 		case Pin.PHOTO_PROCESSING_STATE_NEW, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA:
 			pin.managedObjectContext!.performBlockAndWait {
-				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_NEW
+				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA
 			}
 			let searchOperation = addSearchOperation(pin)
+//			searchOperation.completionBlock = {
+//				guard searchOperation.error == nil else {
+//					return
+//				}
+//				pin.managedObjectContext!.performBlockAndWait {
+//					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS
+//				}
+//			}
 			addDownloadOperation(pin, dependency: searchOperation)
 			startedOperation = true
+			print("search + download started")
 
 		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
 			pin.managedObjectContext!.performBlockAndWait {
-				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA
+				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS
 			}
 			addDownloadOperation(pin)
 			startedOperation = true
+			print("download only started")
+
+		case Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS:
+			// Already fetching data, just let it continue.
+			break
 
 		case Pin.PHOTO_PROCESSING_STATE_COMPLETE:
 			// Nothing to do.
@@ -49,6 +63,7 @@ class PinPhotoDownloadManager {
 			// This was unexpected, so don't do anything other than print something for debugging:
 			print("Unexpected call to launchOperation with pin state: \(state)")
 		}
+		
 		return startedOperation
 	}
 
@@ -56,7 +71,7 @@ class PinPhotoDownloadManager {
 	Adds a search operation on a serial queue associated with this pin,
 	to retrieve information about photos near the pin's geographical location.
 	*/
-	static func addSearchOperation(pin: Pin) -> NSOperation {
+	static func addSearchOperation(pin: Pin) -> ErrorAwareOperation {
 		let searchOperation = SearchOperation(pin: pin, maxPhotos: Constant.MaxPhotosPerPin)
 		QueueManager.serialQueueForPin(pin).addOperation(searchOperation)
 		return searchOperation
@@ -75,9 +90,15 @@ class PinPhotoDownloadManager {
 		}
 		downloadFilesOperation.completionBlock = {
 			pin.managedObjectContext?.performBlock {
+				// Release the completion block when exiting to break the retain cycle.  [unowned downloadFilesOperation] in ... didn't work here.
+				defer {
+					downloadFilesOperation.completionBlock = nil
+				}
+
 				guard pin.photoProcessingError == nil else {
 					return
 				}
+
 				if !downloadFilesOperation.cancelled {
 					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_COMPLETE
 					CoreDataStack.saveContext(pin.managedObjectContext!)

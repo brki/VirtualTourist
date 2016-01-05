@@ -182,6 +182,7 @@ extension MapViewController {
 			guard let error = pinError else {
 				// If the state is an error state, but no error detail is present,
 				// the error has already been communicated to the user.
+				print("MapViewController.observeValueForKeyPath(): no error present, but state is \(state)")
 				break
 			}
 
@@ -191,12 +192,12 @@ extension MapViewController {
 			let title = state == Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA ? "Error fetching data" : "Error while downloading photos"
 			self.showErrorAlert(title, message: error.localizedDescription, completion: nil)
 
-
 			if let underlyingError = error.userInfo["underlyingError"] {
 				print("Error while fetching data / photos: \(underlyingError)")
 			}
 
 		default:
+			// Still getting data or photos.
 			break
 		}
 
