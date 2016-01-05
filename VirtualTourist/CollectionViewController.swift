@@ -28,14 +28,18 @@ class CollectionViewController: UIViewController {
 
 	lazy var fetchedResultsController: NSFetchedResultsController = {
 		let context = self.pin.managedObjectContext!
-		let fetchRequest = NSFetchRequest(entityName: "Photo")
-		fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [self.pin])
-		fetchRequest.sortDescriptors = [NSSortDescriptor(key: "order", ascending: true)]
-		let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: context, sectionNameKeyPath: nil, cacheName: nil)
-		do {
-			try frc.performFetch()
-		} catch {
-			print("CollectionViewController: error on fetchedResultsController.performFetch: \(error)")
+
+		var frc: NSFetchedResultsController!
+		context.performBlockAndWait {
+			let fetchRequest = NSFetchRequest(entityName: "Photo")
+			fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [self.pin])
+			fetchRequest.sortDescriptors = [NSSortDescriptor(key: "order", ascending: true)]
+			frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: context, sectionNameKeyPath: nil, cacheName: nil)
+			do {
+				try frc.performFetch()
+			} catch {
+				print("CollectionViewController: error on fetchedResultsController.performFetch: \(error)")
+			}
 		}
 		frc.delegate = self
 		return frc
