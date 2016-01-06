@@ -167,12 +167,10 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 			return
 		}
 		concurrentQueue.cancelAllOperations()
-		if let err = error {
-			pin.managedObjectContext!.performBlockAndWait {
-				self.pin.photoProcessingError = err
-				self.pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS
-			}
-		}
+		// TODO: should change pin value before persisting if error, but error should still be set if error happens
+		//       in persistData().
+		// Perhaps a PinOperation protocol with a setPinError method?
+		callErrorHandler()
 		persistData()
 		super.cleanup()
 	}

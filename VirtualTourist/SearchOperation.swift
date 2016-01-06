@@ -185,12 +185,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 
 	override func cleanup() {
 		print("In SearchOperation cleanup")  // TODO: remove
-		if let err = error {
-			pin.managedObjectContext?.performBlockAndWait {
-				self.pin.photoProcessingError = err
-				self.pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA
-			}
-		}
+		callErrorHandler()
 		persistData()
 		super.cleanup()
 	}

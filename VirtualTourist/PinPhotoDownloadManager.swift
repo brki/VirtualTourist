@@ -73,6 +73,12 @@ class PinPhotoDownloadManager {
 	*/
 	static func addSearchOperation(pin: Pin) -> ErrorAwareOperation {
 		let searchOperation = SearchOperation(pin: pin, maxPhotos: Constant.MaxPhotosPerPin)
+		searchOperation.errorHandler = { error in
+			pin.managedObjectContext?.performBlockAndWait {
+				pin.photoProcessingError = error
+				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA
+			}
+		}
 		QueueManager.serialQueueForPin(pin).addOperation(searchOperation)
 		return searchOperation
 	}
@@ -103,6 +109,12 @@ class PinPhotoDownloadManager {
 					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_COMPLETE
 					CoreDataStack.saveContext(pin.managedObjectContext!)
 				}
+			}
+		}
+		downloadFilesOperation.errorHandler = { error in
+			pin.managedObjectContext!.performBlockAndWait {
+				pin.photoProcessingError = error
+				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS
 			}
 		}
 
