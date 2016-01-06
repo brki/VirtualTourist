@@ -23,11 +23,14 @@ class CollectionViewController: UIViewController {
 	var isObservingPinState = false
 	var isShowingPhotos = false
 
+	// TODO: replace pin.managedObjectContext?/! with instance variable context, set in viewDidLoad ?
+
 	var queuedChanges = [FetchedResultChange]()
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		collectionView.dataSource = self
+		collectionView.delegate = self
 		messageLabel.hidden = true
 		newCollectionButton.enabled = false
 	}
@@ -38,6 +41,7 @@ class CollectionViewController: UIViewController {
 	
 	override func viewWillDisappear(animated: Bool) {
 		removePinObserver()
+		CoreDataStack.saveContext(pin.managedObjectContext!)
 	}
 
 	lazy var fetchedResultsController: NSFetchedResultsController = {
@@ -56,6 +60,7 @@ class CollectionViewController: UIViewController {
 	@IBAction func refreshPhotosForPin(sender: AnyObject) {
 		fetchedResultsController.delegate = nil
 		newCollectionButton.enabled = false
+		messageLabel.hidden = true
 		PinPhotoDownloadManager.reloadPhotos(self.pin)
 		presentPhotosDependingOnPinState()
 	}
@@ -81,8 +86,6 @@ class CollectionViewController: UIViewController {
 		pin.managedObjectContext?.performBlockAndWait {
 			state = self.pin.photoProcessingState
 		}
-
-		print("presentPhotosDependingOnPinState: state: \(state)")
 
 		hasData = false
 
@@ -223,6 +226,18 @@ extension CollectionViewController: UICollectionViewDataSource {
 	}
 }
 
+extension CollectionViewController: UICollectionViewDelegate {
+
+	func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+		let context = pin.managedObjectContext!
+		context.performBlock {
+			if let photo = self.fetchedResultsController.objectAtIndexPath(indexPath) as? Photo {
+				context.deleteObject(photo)
+			}
+		}
+	}
+}
+
 extension CollectionViewController: NSFetchedResultsControllerDelegate {
 
 	/**
@@ -266,5 +281,15 @@ extension CollectionViewController: NSFetchedResultsControllerDelegate {
 
 			},
 			completion: nil)
+
+		// If all photos have been removed, show the "no photos" message.
+		// Note that fetchedResultsController.fetchedObjects.count does not reflect the removed object immediately after deletion,
+		// so this check is done here, instead.
+		if collectionView.numberOfItemsInSection(0) == 0 {
+			self.hasData = false
+			async_main {
+				self.showNoPhotosMessage()
+			}
+		}
 	}
 }

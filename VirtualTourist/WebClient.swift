@@ -72,7 +72,9 @@ class WebClient {
 	func makeDataRequest(url: NSURL, requestMethod: MethodType, let headers: [String: String]? = nil, body: String? = nil, completionHandler: ((data: NSData?, response: NSHTTPURLResponse?, error: NSError?) -> Void)? = nil) -> NSURLSessionDataTask {
 		let request = NSMutableURLRequest(URL: url)
 		request.HTTPMethod = requestMethod.rawValue
-		request.timeoutInterval = 15
+
+		// request.timeoutInterval = 10  // Manual debugging is easier with a low timeout.
+
 		if let headers = headers {
 			for (field, value) in headers {
 				request.addValue(value, forHTTPHeaderField: field)

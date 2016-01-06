@@ -19,6 +19,13 @@ class Photo: NSManagedObject {
 
 	static var persistentStoreContext = CoreDataStack.sharedInstance.managedObjectContext
 
+	var fileURL: NSURL? {
+		guard let pinDirectory = self.pin?.directory() else {
+			return nil
+		}
+		return pinDirectory.URLByAppendingPathComponent("\(self.flickrID).jpg")
+	}
+
 	override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
 		super.init(entity: entity, insertIntoManagedObjectContext: context)
 	}
@@ -34,16 +41,23 @@ class Photo: NSManagedObject {
 		self.urlTemplate = photo.urlTemplate
 	}
 
+	/**
+	Returns a URL with which a photo of the given size can be downloaded from Flickr.
+	*/
 	func URLForSize(size: PhotoSize) -> NSURL {
 		let urlString = self.urlTemplate.stringByReplacingOccurrencesOfString("{size}", withString: size.rawValue)
 		return NSURL(string: urlString)!
 	}
 
-	var fileURL: NSURL? {
-		guard let pinDirectory = self.pin?.directory() else {
-			return nil
+	override func prepareForDeletion() {
+		if let storageURL = fileURL {
+			do {
+				try NSFileManager.defaultManager().removeItemAtURL(storageURL)
+			} catch {
+				print ("Error while deleting photo file: \(error)")
+			}
 		}
-		return pinDirectory.URLByAppendingPathComponent("\(self.flickrID).jpg")
+		super.prepareForDeletion()
 	}
 
 }

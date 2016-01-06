@@ -11,10 +11,6 @@ import CoreData
 
 class SearchOperation: ConcurrentDownloadOperation {
 
-	deinit {
-		print("deinit of SearchOperation")
-	}
-	
 	enum ErrorCode: Int {
 		case ErrorFetchingPhotoList = 1
 		case UnexpectedHTTPResponseCode = 2
@@ -132,7 +128,6 @@ class SearchOperation: ConcurrentDownloadOperation {
 			objc_sync_exit(self)
 		}
 		if photosAdded < maxPhotos {
-			// TODO: first check if it exists in the managedObjectContext, before trying to add it.  Or use NSMergeByPropertyObjectTrumpMergePolicy, if possible.
 			let context = pin.managedObjectContext!
 			context.performBlockAndWait {
 				let _ = Photo(pin: self.pin, photo: photo, order: self.photosAdded, managedObjectContext: context)
@@ -184,7 +179,6 @@ class SearchOperation: ConcurrentDownloadOperation {
 	}
 
 	override func cleanup() {
-		print("In SearchOperation cleanup")  // TODO: remove
 		callDownloadErrorHandler()
 		persistData()
 		super.cleanup()

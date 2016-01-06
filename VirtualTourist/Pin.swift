@@ -37,7 +37,7 @@ class Pin: NSManagedObject {
 		if version == nil {
 			version = self.photosVersion
 		}
-		var url: NSURL? = Constant.documentDir.URLByAppendingPathComponent(self.relativePath + "-\(version)")
+		var url: NSURL? = Constant.documentDir.URLByAppendingPathComponent(self.relativePath + "-\(version!)")
 		do {
 			// Create the directory if it doesn't already exist (if it does exist, this will not throw an error):
 			try NSFileManager.defaultManager().createDirectoryAtURL(url!, withIntermediateDirectories: true, attributes: nil)
@@ -49,7 +49,7 @@ class Pin: NSManagedObject {
 	}
 
 	func deleteDirectoryForVersion(version: Int) -> Bool {
-		guard let url = directory() else {
+		guard let url = directory(version) else {
 			print("Unable to get directory URL for version \(version)")
 			return false
 		}

@@ -46,7 +46,6 @@ class PinPhotoDownloadManager {
 			}
 			addDownloadOperation(pin, dependency: searchOperation)
 			startedOperation = true
-			print("search + download started")
 
 		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
 			pin.managedObjectContext!.performBlockAndWait {
@@ -54,7 +53,6 @@ class PinPhotoDownloadManager {
 			}
 			addDownloadOperation(pin)
 			startedOperation = true
-			print("download only started")
 
 		case Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS:
 			// Already fetching data, just let it continue.
@@ -127,21 +125,18 @@ class PinPhotoDownloadManager {
 	}
 
 	static func reloadPhotos(pin: Pin) {
-		var version = -1
+		var oldVersion = -1
 		let context = pin.managedObjectContext!
 		context.performBlockAndWait {
-			version = pin.photosVersion
+			oldVersion = pin.photosVersion
 			pin.photosVersion += 1
 			pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_NEW
 			pin.photos = NSSet()
 		}
-		CoreDataStack.saveContext(context) { error, isChildContext in
-			print("\(error) \(isChildContext)")
-		}
-
+		CoreDataStack.saveContext(context)
 
 		// Remove the previous version directory, with all photos.
-		pin.deleteDirectoryForVersion(version)
+		pin.deleteDirectoryForVersion(oldVersion)
 
 		// Start loading new photos:
 		launchOperations(pin)

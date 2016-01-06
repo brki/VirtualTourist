@@ -44,7 +44,6 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 	}
 
 	deinit {
-		print("deinit DownloadFilesOperation object")
 		concurrentQueue.removeObserver(self, forKeyPath: "operationCount")
 	}
 
@@ -158,7 +157,6 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 	}
 
 	override func cleanup() {
-		print("In DownloadFilesOperation cleanup")  // TODO: remove
 		objc_sync_enter(self)
 		defer {
 			objc_sync_exit(self)
