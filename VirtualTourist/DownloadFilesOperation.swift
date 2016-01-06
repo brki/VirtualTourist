@@ -167,10 +167,7 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 			return
 		}
 		concurrentQueue.cancelAllOperations()
-		// TODO: should change pin value before persisting if error, but error should still be set if error happens
-		//       in persistData().
-		// Perhaps a PinOperation protocol with a setPinError method?
-		callErrorHandler()
+		callDownloadErrorHandler()
 		persistData()
 		super.cleanup()
 	}

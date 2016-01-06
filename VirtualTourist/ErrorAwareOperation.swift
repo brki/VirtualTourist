@@ -14,9 +14,6 @@ class ErrorAwareOperation: NSOperation {
 	var error: NSError?
 	var errorDomain: String = "ErrorAwareOperation"
 
-	// Error handler that will be typically be called in the operation's cleanup() method.
-	var errorHandler: ((NSError) -> Void)? = nil
-
 	var shouldCancelIfAnyDependencyCancelled = true
 	var shoudSetErrorIfAnyDependencyHasError = true
 	var shouldCancelBeforeStartingIfErrorSet = true
@@ -75,14 +72,4 @@ class ErrorAwareOperation: NSOperation {
 			self.cancel()
 		}
 	}
-
-	/**
-	If there is an error, call the error handler with it.
-	*/
-	func callErrorHandler() {
-		if let err = error {
-			errorHandler?(err)
-		}
-	}
-
 }

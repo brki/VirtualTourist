@@ -13,6 +13,9 @@ class ConcurrentDownloadOperation: ConcurrentOperation {
 	// Holds reference to currently executing tasks
 	var sessionTasks = [String: NSURLSessionTask]()
 
+	// Error handler closure that will be called if an error occurred during downloading.
+	var downloadErrorHandler: ((NSError) -> Void)? = nil
+
 	override init() {
 		super.init()
 		self.errorDomain = "ConcurrentDownloadOperation"
@@ -45,4 +48,15 @@ class ConcurrentDownloadOperation: ConcurrentOperation {
 		
 		super.cleanup()
 	}
+
+	/**
+	If there is an error, call the error handler with it.
+	*/
+	func callDownloadErrorHandler() {
+		if let err = error {
+			downloadErrorHandler?(err)
+		}
+	}
+
+
 }

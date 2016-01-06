@@ -186,7 +186,7 @@ extension MapViewController {
 				break
 			}
 
-			// Save the context, so that pin's photoProcessingError's now-nil state will be persisted
+			// Save the context, so that pin's photoProcessingError's nil state will be persisted
 			CoreDataStack.saveContext(pin.managedObjectContext!)
 
 			let title = state == Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA ? "Error fetching data" : "Error while downloading photos"

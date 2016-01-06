@@ -31,14 +31,19 @@ class PinPhotoDownloadManager {
 				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA
 			}
 			let searchOperation = addSearchOperation(pin)
-//			searchOperation.completionBlock = {
-//				guard searchOperation.error == nil else {
-//					return
-//				}
-//				pin.managedObjectContext!.performBlockAndWait {
-//					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS
-//				}
-//			}
+			searchOperation.completionBlock = {
+				// Remove cyclic reference when exiting block:
+				defer {
+					searchOperation.completionBlock = nil
+				}
+
+				guard searchOperation.error == nil else {
+					return
+				}
+				pin.managedObjectContext!.performBlockAndWait {
+					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS
+				}
+			}
 			addDownloadOperation(pin, dependency: searchOperation)
 			startedOperation = true
 			print("search + download started")
@@ -73,7 +78,7 @@ class PinPhotoDownloadManager {
 	*/
 	static func addSearchOperation(pin: Pin) -> ErrorAwareOperation {
 		let searchOperation = SearchOperation(pin: pin, maxPhotos: Constant.MaxPhotosPerPin)
-		searchOperation.errorHandler = { error in
+		searchOperation.downloadErrorHandler = { error in
 			pin.managedObjectContext?.performBlockAndWait {
 				pin.photoProcessingError = error
 				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA
@@ -111,7 +116,7 @@ class PinPhotoDownloadManager {
 				}
 			}
 		}
-		downloadFilesOperation.errorHandler = { error in
+		downloadFilesOperation.downloadErrorHandler = { error in
 			pin.managedObjectContext!.performBlockAndWait {
 				pin.photoProcessingError = error
 				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS
@@ -119,5 +124,26 @@ class PinPhotoDownloadManager {
 		}
 
 		QueueManager.filesDownloadQueue.addOperation(downloadFilesOperation)
+	}
+
+	static func reloadPhotos(pin: Pin) {
+		var version = -1
+		let context = pin.managedObjectContext!
+		context.performBlockAndWait {
+			version = pin.photosVersion
+			pin.photosVersion += 1
+			pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_NEW
+			pin.photos = NSSet()
+		}
+		CoreDataStack.saveContext(context) { error, isChildContext in
+			print("\(error) \(isChildContext)")
+		}
+
+
+		// Remove the previous version directory, with all photos.
+		pin.deleteDirectoryForVersion(version)
+
+		// Start loading new photos:
+		launchOperations(pin)
 	}
 }

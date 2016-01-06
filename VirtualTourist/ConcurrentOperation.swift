@@ -70,10 +70,7 @@ class ConcurrentOperation: ErrorAwareOperation {
 		objc_sync_enter(self)
 
 		if !finished {
-			if let err = error {
-				errorHandler?(err)
-			}
-			
+
 			cleanup()
 
 			// Trigger KVO notifications:

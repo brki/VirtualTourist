@@ -185,7 +185,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 
 	override func cleanup() {
 		print("In SearchOperation cleanup")  // TODO: remove
-		callErrorHandler()
+		callDownloadErrorHandler()
 		persistData()
 		super.cleanup()
 	}
