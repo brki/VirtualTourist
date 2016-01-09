@@ -19,11 +19,10 @@ class CollectionViewController: UIViewController {
 	@IBOutlet weak var newCollectionButton: UIBarButtonItem!
 
 	var pin: Pin!
+	var context: NSManagedObjectContext!
 	var hasData = false
 	var isObservingPinState = false
 	var isShowingPhotos = false
-
-	// TODO: replace pin.managedObjectContext?/! with instance variable context, set in viewDidLoad ?
 
 	var queuedChanges = [FetchedResultChange]()
 
@@ -37,22 +36,22 @@ class CollectionViewController: UIViewController {
 
 	override func viewWillAppear(animated: Bool) {
 		presentPhotosDependingOnPinState()
+		context = pin.managedObjectContext!
 	}
 	
 	override func viewWillDisappear(animated: Bool) {
 		removePinObserver()
-		CoreDataStack.saveContext(pin.managedObjectContext!)
+		CoreDataStack.saveContext(context)
 	}
 
 	lazy var fetchedResultsController: NSFetchedResultsController = {
-		let context = self.pin.managedObjectContext!
 
 		var frc: NSFetchedResultsController!
-		context.performBlockAndWait {
+		self.context.performBlockAndWait {
 			let fetchRequest = NSFetchRequest(entityName: "Photo")
 			fetchRequest.predicate = NSPredicate(format: "pin = %@", argumentArray: [self.pin])
 			fetchRequest.sortDescriptors = [NSSortDescriptor(key: "order", ascending: true)]
-			frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: context, sectionNameKeyPath: nil, cacheName: nil)
+			frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.context, sectionNameKeyPath: nil, cacheName: nil)
 		}
 		return frc
 	}()
@@ -66,7 +65,7 @@ class CollectionViewController: UIViewController {
 	}
 
 	func refreshFetchRequest() {
-		self.pin.managedObjectContext!.performBlockAndWait {
+		context.performBlockAndWait {
 			do {
 				try self.fetchedResultsController.performFetch()
 				self.fetchedResultsController.delegate = self
@@ -83,7 +82,7 @@ class CollectionViewController: UIViewController {
 		// If an ongoing SearchOperation exists for this pin.photosVersion, show a spinner indicator and wait until there is data.
 		var state = -1
 
-		pin.managedObjectContext?.performBlockAndWait {
+		context.performBlockAndWait {
 			state = self.pin.photoProcessingState
 		}
 
@@ -157,7 +156,6 @@ class CollectionViewController: UIViewController {
 			refreshFetchRequest()
 
 			var count = 0
-			let context = pin.managedObjectContext!
 			context.performBlockAndWait {
 				count = self.fetchedResultsController.fetchedObjects?.count ?? 0
 			}
@@ -171,7 +169,7 @@ class CollectionViewController: UIViewController {
 		}
 
 		// If the photo downloading process has completed, enable the collection refresh button.
-		pin.managedObjectContext?.performBlockAndWait {
+		context.performBlockAndWait {
 			async_main {
 				self.newCollectionButton.enabled = self.pin.photoProcessingState == Pin.PHOTO_PROCESSING_STATE_COMPLETE
 			}
@@ -229,7 +227,6 @@ extension CollectionViewController: UICollectionViewDataSource {
 extension CollectionViewController: UICollectionViewDelegate {
 
 	func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-		let context = pin.managedObjectContext!
 		context.performBlock {
 			if let photo = self.fetchedResultsController.objectAtIndexPath(indexPath) as? Photo {
 				context.deleteObject(photo)
