@@ -24,12 +24,4 @@ extension Pin {
 	One of the Pin.PHOTO_PROCESSING_STATE_* values.
 	*/
 	@NSManaged var photoProcessingState: Int
-
-	/**
-	This will be set if there was an error while getting the photos and the error has not yet been handled by a view controller.
-	
-	Any view controller that does handle the error (e.g. by displaying a notice to the user or logging the error) should
-	set this property to nil after handling it, to avoid another view controller also handling the error.
-	*/
-	@NSManaged var photoProcessingError: NSError?
 }

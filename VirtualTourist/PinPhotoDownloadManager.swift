@@ -77,10 +77,11 @@ class PinPhotoDownloadManager {
 	static func addSearchOperation(pin: Pin) -> ErrorAwareOperation {
 		let searchOperation = SearchOperation(pin: pin, maxPhotos: Constant.MaxPhotosPerPin)
 		searchOperation.downloadErrorHandler = { error in
-			pin.managedObjectContext?.performBlockAndWait {
-				pin.photoProcessingError = error
-				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA
-			}
+			handlePhotoProcessingError(pin,
+				state: Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA,
+				alertTitle: "Error while fetching photo information",
+				error: error
+			)
 		}
 		QueueManager.serialQueueForPin(pin).addOperation(searchOperation)
 		return searchOperation
@@ -99,29 +100,46 @@ class PinPhotoDownloadManager {
 		}
 		downloadFilesOperation.completionBlock = {
 			pin.managedObjectContext?.performBlock {
-				// Release the completion block when exiting to break the retain cycle.  [unowned downloadFilesOperation] in ... didn't work here.
+				// Release the completion block when exiting to break the retain cycle between the
+				// DownloadFilesOperation and this block:
+				// (Note: [unowned downloadFilesOperation] in ... didn't work here)
 				defer {
 					downloadFilesOperation.completionBlock = nil
 				}
 
-				guard pin.photoProcessingError == nil else {
-					return
-				}
-
-				if !downloadFilesOperation.cancelled {
+				// If there was no error, and the operation was not cancelled, record that the operations completed successfully.
+				if !(downloadFilesOperation.cancelled || downloadFilesOperation.error != nil) {
 					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_COMPLETE
 					CoreDataStack.saveContext(pin.managedObjectContext!)
 				}
 			}
 		}
 		downloadFilesOperation.downloadErrorHandler = { error in
-			pin.managedObjectContext!.performBlockAndWait {
-				pin.photoProcessingError = error
-				pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS
-			}
+			handlePhotoProcessingError(pin,
+				state: Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS,
+				alertTitle: "Error while downloading photo information",
+				error: error
+			)
 		}
 
 		QueueManager.filesDownloadQueue.addOperation(downloadFilesOperation)
+	}
+
+	static func handlePhotoProcessingError(pin: Pin, state: Int, alertTitle: String, error: NSError) {
+		let context = pin.managedObjectContext!
+
+		context.performBlockAndWait {
+			pin.photoProcessingState = state
+		}
+		CoreDataStack.saveContext(context)
+
+		// Show an error message on the foreground view controller:
+		Utility.presentAlert(alertTitle, message: error.localizedDescription)
+
+		// Log details, if present.
+		if let underlyingError = error.userInfo["underlyingError"] {
+			print("Error while fetching data / photos (photoProcessingState: \(state): \(underlyingError)")
+		}
 	}
 
 	static func reloadPhotos(pin: Pin) {

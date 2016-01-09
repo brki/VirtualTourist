@@ -166,21 +166,21 @@
 		D382CDA91C09EA3900BCE3FB /* VirtualTourist */ = {
 			isa = PBXGroup;
 			children = (
-				D35BD9221C1DB5E400866F2C /* Operations */,
 				D382CDB61C09EA3900BCE3FB /* LaunchScreen.storyboard */,
 				D382CDAE1C09EA3900BCE3FB /* Main.storyboard */,
 				D382CDB11C09EA3900BCE3FB /* VirtualTourist.xcdatamodeld */,
 				D382CDB91C09EA3900BCE3FB /* Info.plist */,
 				D382CDDB1C09EAB500BCE3FB /* CoreDataStack.swift */,
 				D382CDAA1C09EA3900BCE3FB /* AppDelegate.swift */,
+				D35BD9221C1DB5E400866F2C /* Operations */,
 				D3E3A7DD1C0D8801003F64B1 /* Flickr */,
 				D382CDE61C09EDEF00BCE3FB /* View Controllers */,
 				D3BA537A1C1C5A4C00B2FB22 /* Models */,
 				D382CDE51C09EDD600BCE3FB /* CoreData Models */,
 				D343F6831C37ECB800F96598 /* Views */,
-				D382CDB41C09EA3900BCE3FB /* Assets.xcassets */,
 				D3E3A7E01C0D93A4003F64B1 /* extension-Dict.swift */,
 				D303AD9C1C181F6700CDC399 /* utilities.swift */,
+				D382CDB41C09EA3900BCE3FB /* Assets.xcassets */,
 			);
 			path = VirtualTourist;
 			sourceTree = "<group>";

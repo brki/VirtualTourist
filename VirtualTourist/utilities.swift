@@ -16,7 +16,7 @@ func async_main(block: () -> Void) {
 
 class Utility {
 
-	func presentAlert(title: String?, message: String?) {
+	static func presentAlert(title: String?, message: String?) {
 
 		let alertController = UIAlertController(title: title, message: message, preferredStyle: .Alert)
 		alertController.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))

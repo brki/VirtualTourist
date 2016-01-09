@@ -168,33 +168,8 @@ extension MapViewController {
 		var finished = false
 
 		switch state {
-		case Pin.PHOTO_PROCESSING_STATE_COMPLETE:
-			// Data and photo downloading tasks completed without error.
+		case Pin.PHOTO_PROCESSING_STATE_COMPLETE, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
 			finished = true
-
-		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
-			finished = true
-			var pinError: NSError?
-			pin.managedObjectContext!.performBlockAndWait {
-				pinError = pin.photoProcessingError
-				pin.photoProcessingError = nil
-			}
-			guard let error = pinError else {
-				// If the state is an error state, but no error detail is present,
-				// the error has already been communicated to the user.
-				print("MapViewController.observeValueForKeyPath(): no error present, but state is \(state)")
-				break
-			}
-
-			// Save the context, so that pin's photoProcessingError's nil state will be persisted
-			CoreDataStack.saveContext(pin.managedObjectContext!)
-
-			let title = state == Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA ? "Error fetching data" : "Error while downloading photos"
-			self.showErrorAlert(title, message: error.localizedDescription, completion: nil)
-
-			if let underlyingError = error.userInfo["underlyingError"] {
-				print("Error while fetching data / photos: \(underlyingError)")
-			}
 
 		default:
 			// Still getting data or photos.

@@ -229,7 +229,7 @@ extension CollectionViewController: UICollectionViewDelegate {
 	func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
 		context.performBlock {
 			if let photo = self.fetchedResultsController.objectAtIndexPath(indexPath) as? Photo {
-				context.deleteObject(photo)
+				self.context.deleteObject(photo)
 			}
 		}
 	}
