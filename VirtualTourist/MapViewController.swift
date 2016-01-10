@@ -23,9 +23,9 @@ class MapViewController: UIViewController {
 	@IBOutlet weak var mapView: MKMapView!
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		CoreDataStack.sharedInstance.registerContext(context)
 		mapView.delegate = self
 		addSavedPinsToMap()
-		// Do any additional setup after loading the view, typically from a nib.
 	}
 
 	override func viewWillAppear(animated: Bool) {
@@ -79,6 +79,7 @@ class MapViewController: UIViewController {
 				droppedPin.latitude = coordinate.latitude
 				droppedPin.longitude = coordinate.longitude
 			}
+			CoreDataStack.saveContext(context)
 			launchOperations(droppedPin)
 			draggedAnnotation = nil
 			draggedPin = nil

@@ -19,8 +19,15 @@ class Pin: NSManagedObject {
 	static let PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS = 4
 	static let PHOTO_PROCESSING_STATE_COMPLETE = 5
 
-	// todo: add errorWasHandled property?
-
+	var photoProcessingStateIsError: Bool {
+		switch photoProcessingState {
+		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
+			return true
+		default:
+			return false
+		}
+	}
+	
 	override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
 		super.init(entity: entity, insertIntoManagedObjectContext: context)
 	}

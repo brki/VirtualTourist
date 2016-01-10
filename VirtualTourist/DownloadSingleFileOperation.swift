@@ -38,7 +38,13 @@ class DownloadSingleFileOperation: ConcurrentOperation {
 
 			if let err = error {
 
-				self.error = self.makeNSError(1, localizedDescription: "Error fetching file", underlyingError: err)
+				// If the error is a NSURLErrorDomain error, use it's description, otherwise use something generic.
+				var errorDescription = "Error fetching photo list"
+				if err.domain == "NSURLErrorDomain" {
+					errorDescription = err.localizedDescription
+				}
+
+				self.error = self.makeNSError(1, localizedDescription: errorDescription, underlyingError: err)
 
 			} else {
 

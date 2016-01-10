@@ -19,7 +19,7 @@ class CollectionViewController: UIViewController {
 	@IBOutlet weak var newCollectionButton: UIBarButtonItem!
 
 	var pin: Pin!
-	var context: NSManagedObjectContext!
+	var context: NSManagedObjectContext { return pin.managedObjectContext! }
 	var hasData = false
 	var isObservingPinState = false
 	var isShowingPhotos = false
@@ -36,7 +36,6 @@ class CollectionViewController: UIViewController {
 
 	override func viewWillAppear(animated: Bool) {
 		presentPhotosDependingOnPinState()
-		context = pin.managedObjectContext!
 	}
 	
 	override func viewWillDisappear(animated: Bool) {
@@ -107,11 +106,6 @@ class CollectionViewController: UIViewController {
 			addPinObserver()
 			isShowingPhotos = false
 			showActivityIndicator()
-
-		// TODO: revisit this logic:
-		case Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
-			// Pop this view controller off the stack, the presenting view controller will show the error.
-			self.navigationController?.popViewControllerAnimated(true)
 
 		default:
 			print("Unexpected photo processing state: \(pin.photoProcessingState)")

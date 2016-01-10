@@ -10,5 +10,5 @@ import Foundation
 
 struct Constant {
 	static let MaxPhotosPerPin = 600
-	static let documentDir: NSURL = CoreDataStack.sharedInstance.applicationDocumentsDirectory
+	static let documentDir = try! NSFileManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true)
 }

@@ -153,7 +153,14 @@ class SearchOperation: ConcurrentDownloadOperation {
 			}
 
 			if let err = error {
-				self.error = self.makeNSError(ErrorCode.ErrorFetchingPhotoList.rawValue, localizedDescription: "Error fetching photo list", underlyingError: err)
+
+				// If the error is a NSURLErrorDomain error, use it's description, otherwise use something generic.
+				var errorDescription = "Error fetching photo list"
+				if err.domain == "NSURLErrorDomain" {
+					errorDescription = err.localizedDescription
+				}
+
+				self.error = self.makeNSError(ErrorCode.ErrorFetchingPhotoList.rawValue, localizedDescription: errorDescription, underlyingError: err)
 				self.cancel()
 				return
 			}

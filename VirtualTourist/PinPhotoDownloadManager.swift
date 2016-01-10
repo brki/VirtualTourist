@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CoreData
 
 class PinPhotoDownloadManager {
 
@@ -21,7 +22,6 @@ class PinPhotoDownloadManager {
 		pin.managedObjectContext!.performBlockAndWait {
 			state = pin.photoProcessingState
 		}
-
 		var startedOperation = false
 
 		switch state {
@@ -37,12 +37,24 @@ class PinPhotoDownloadManager {
 					searchOperation.completionBlock = nil
 				}
 
+				// If error was set, the error handler will have taken care of any necessary error handling already.
 				guard searchOperation.error == nil else {
 					return
 				}
-				pin.managedObjectContext!.performBlockAndWait {
-					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS
+
+				let wasCancelled = searchOperation.cancelled
+				let context = pin.managedObjectContext!
+				context.performBlockAndWait {
+					if wasCancelled {
+						// Set photoProcessingState to error state, so that the operation can be re-tried
+						// next time the user tries to view the photos.
+						pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA
+					} else {
+						// If no error, and not cancelled, then the downloading photos operation will be starting.
+						pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS
+					}
 				}
+				CoreDataStack.saveContext(context)
 			}
 			addDownloadOperation(pin, dependency: searchOperation)
 			startedOperation = true
@@ -107,9 +119,27 @@ class PinPhotoDownloadManager {
 					downloadFilesOperation.completionBlock = nil
 				}
 
-				// If there was no error, and the operation was not cancelled, record that the operations completed successfully.
-				if !(downloadFilesOperation.cancelled || downloadFilesOperation.error != nil) {
+				// Error handler would have been called if error is set, so no need to handle that here.
+				guard downloadFilesOperation.error == nil else {
+					return
+				}
+
+				var needsSave = false
+
+				if downloadFilesOperation.cancelled {
+					// If a dependendant operation already set the error state, leave it like that.
+					// Otherwise, if the operation was cancelled, mark it with an appropriate error state so that
+					// processing can be retried next time the user tries to view the pin's photos.
+					if !pin.photoProcessingStateIsError {
+						pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS
+						needsSave = true
+					}
+				} else {
 					pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_COMPLETE
+					needsSave = true
+				}
+
+				if needsSave {
 					CoreDataStack.saveContext(pin.managedObjectContext!)
 				}
 			}
@@ -117,7 +147,7 @@ class PinPhotoDownloadManager {
 		downloadFilesOperation.downloadErrorHandler = { error in
 			handlePhotoProcessingError(pin,
 				state: Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS,
-				alertTitle: "Error while downloading photo information",
+				alertTitle: "Error while downloading photos",
 				error: error
 			)
 		}
@@ -126,12 +156,8 @@ class PinPhotoDownloadManager {
 	}
 
 	static func handlePhotoProcessingError(pin: Pin, state: Int, alertTitle: String, error: NSError) {
-		let context = pin.managedObjectContext!
 
-		context.performBlockAndWait {
-			pin.photoProcessingState = state
-		}
-		CoreDataStack.saveContext(context)
+		savePinWithState(pin, state: state)
 
 		// Show an error message on the foreground view controller:
 		Utility.presentAlert(alertTitle, message: error.localizedDescription)
@@ -140,6 +166,15 @@ class PinPhotoDownloadManager {
 		if let underlyingError = error.userInfo["underlyingError"] {
 			print("Error while fetching data / photos (photoProcessingState: \(state): \(underlyingError)")
 		}
+	}
+
+	static func savePinWithState(pin: Pin, state: Int) {
+		let context = pin.managedObjectContext!
+
+		context.performBlockAndWait {
+			pin.photoProcessingState = state
+		}
+		CoreDataStack.saveContext(context)
 	}
 
 	static func reloadPhotos(pin: Pin) {
@@ -158,5 +193,33 @@ class PinPhotoDownloadManager {
 
 		// Start loading new photos:
 		launchOperations(pin)
+	}
+
+	/**
+	Adjusts pin status on startup.  If the application crashed or was killed while fetching photo information for a pin
+	or downloading photos for a pin, the pin's photoProcessingState should be adjusted to reflect that that operation
+	did not sucessfully complete.
+	*/
+	static func adjustPinStatusAtApplicationStartup() {
+		let context = CoreDataStack.sharedInstance.managedObjectContext
+
+		let request = NSBatchUpdateRequest(entityName: "Pin")
+		request.propertiesToUpdate = ["photoProcessingState": Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA]
+		request.predicate = NSPredicate(format: "photoProcessingState = %@", Pin.PHOTO_PROCESSING_STATE_FETCHING_DATA as NSNumber)
+		request.resultType = .StatusOnlyResultType
+
+		let request2 = NSBatchUpdateRequest(entityName: "Pin")
+		request2.propertiesToUpdate = ["photoProcessingState": Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS]
+		request2.predicate = NSPredicate(format: "photoProcessingState = %@", Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS as NSNumber)
+		request2.resultType = .StatusOnlyResultType
+
+		context.performBlock {
+			do {
+				try context.executeRequest(request)
+				try context.executeRequest(request2)
+			} catch {
+				print("Error while adjusting pin status: \(error)")
+			}
+		}
 	}
 }

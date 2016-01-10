@@ -21,15 +21,17 @@ class Utility {
 		let alertController = UIAlertController(title: title, message: message, preferredStyle: .Alert)
 		alertController.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))
 
-		guard var controller = UIApplication.sharedApplication().keyWindow?.rootViewController else {
-			print("presentAlert: Unable to get rootViewController")
-			return
-		}
+		async_main {
+			guard var controller = UIApplication.sharedApplication().keyWindow?.rootViewController else {
+				print("presentAlert: Unable to get rootViewController")
+				return
+			}
 
-		while let presentedController = controller.presentedViewController {
-			controller = presentedController
-		}
+			while let presentedController = controller.presentedViewController {
+				controller = presentedController
+			}
 
-		controller.presentViewController(alertController, animated: true, completion: nil)
+			controller.presentViewController(alertController, animated: true, completion: nil)
+		}
 	}
 }

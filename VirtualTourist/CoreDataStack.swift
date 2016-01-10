@@ -61,6 +61,19 @@ class CoreDataStack {
 		}
 	}
 
+	// Contexts that will be saved when saveAllRegisteredContexts() is called.
+	var registeredContexts = Set<NSManagedObjectContext>()
+
+	func registerContext(context: NSManagedObjectContext) {
+		registeredContexts.insert(context)
+	}
+
+	func saveAllRegisteredContexts() {
+		for context in registeredContexts {
+			CoreDataStack.saveContext(context)
+		}
+	}
+
 	lazy var applicationDocumentsDirectory: NSURL = {
 		// The directory the application uses to store the Core Data store file. This code uses a directory named "ch.truckin.VirtualTourist" in the application's documents Application Support directory.
 		let urls = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)
@@ -99,7 +112,6 @@ class CoreDataStack {
 	}()
 
 	lazy var managedObjectContext: NSManagedObjectContext = {
-		// Returns the managed object context for the application (which is already bound to the persistent store coordinator for the application.) This property is optional since there are legitimate error conditions that could cause the creation of the context to fail.
 		let coordinator = self.persistentStoreCoordinator
 		var managedObjectContext = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
 		managedObjectContext.persistentStoreCoordinator = coordinator

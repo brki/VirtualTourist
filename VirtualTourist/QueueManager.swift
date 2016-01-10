@@ -36,10 +36,13 @@ struct QueueManager {
 		return queue
 	}
 
-	// TODO: cancel all operations in queue and remove queue if pin is removed.
-
 	static func removeSerialQueueForPin(pin: Pin) {
-		queues[pin] = nil
+		if let queue = queues[pin] {
+			guard queue.operationCount == 0 else {
+				print("Warning: tried to remove serial queue for pin\(pin), but the queue is not empty")
+				return
+			}
+			queues[pin] = nil
+		}
 	}
-
 }

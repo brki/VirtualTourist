@@ -16,7 +16,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
 	func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
-		// Override point for customization after application launch.
+		PinPhotoDownloadManager.adjustPinStatusAtApplicationStartup()
 		return true
 	}
 
@@ -41,7 +41,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 	func applicationWillTerminate(application: UIApplication) {
 		// Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 		// Saves changes in the application's managed object context before the application terminates.
-		// CoreDataStack.sharedInstance.saveContext()
+
+
+		// Cancel all operations.  Any active operations associated with a pin will set an appropriate error state
+		// for the pin in their completion handler; this allows the appropriate operation to be restarted the next
+		// time that the user tries to view the pin's photos.
+		for queue in QueueManager.queues.values {
+			queue.cancelAllOperations()
+		}
+		QueueManager.filesDownloadQueue.cancelAllOperations()
+		CoreDataStack.sharedInstance.saveAllRegisteredContexts()
 	}
 
 }
