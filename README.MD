@@ -1,13 +1,13 @@
 # VirtualTourist
 
-## What is it
+## What it is
 This is an iPhone-only app developed as the final project for the Udacity course
 [iOS Persistence and Core Data](https://www.udacity.com/course/ios-persistence-and-core-data--ud325).
 
 This was written to work with Swift 2.1.
 
-## What does it do
-The app lets you drop pins on a map.  When you drop a pin, photo thumbnail associated with that location
+## What it does
+The app lets you drop pins on a map.  When you drop a pin, photo thumbnails associated with that location
 are downloaded from Flickr and stored locally.  Tapping on an existing pin shows a collection view
 with the associated photos.  Inside the collection view, tapping on a photo removes it from the collection.
 The pins and their associated photo's information are stored using Core Data; the photos themselves are
@@ -36,7 +36,7 @@ are replaced with the downloaded images.
 
 ### Robustness
 When the application is terminated by the user, the state in persisted in such a way that when the app is launched
-again, the relevant operations (e.g. ``SearchOperation`` and ``DownloadFilesOperation, or only ``DownloadFileOperation``)
+again, the relevant operations (e.g. ``SearchOperation`` and ``DownloadFilesOperation``, or only ``DownloadFileOperation``)
 can be started again if necessary.
 
 When the application starts, it updates the photo data fetching / image downloading state for any pins that do not
