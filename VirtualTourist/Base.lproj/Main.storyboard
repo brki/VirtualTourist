@@ -125,20 +125,13 @@
                         </constraints>
                     </view>
                     <toolbarItems/>
-                    <navigationItem key="navigationItem" id="4fX-Yz-uyj">
-                        <barButtonItem key="rightBarButtonItem" systemItem="refresh" id="ckP-hJ-dXn" userLabel="New collection button">
-                            <connections>
-                                <action selector="refreshPhotosForPin:" destination="BE6-jc-vNV" id="v7x-gH-R9j"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" id="4fX-Yz-uyj"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" barStyle="black" prompted="NO"/>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
                         <outlet property="activityIndicator" destination="eC4-e1-65o" id="Qdi-u4-Qs1"/>
                         <outlet property="collectionView" destination="Y3K-rr-Kce" id="eyz-3L-Mli"/>
                         <outlet property="messageLabel" destination="Wdq-QG-4lN" id="18M-MM-T9W"/>
-                        <outlet property="newCollectionButton" destination="ckP-hJ-dXn" id="1Np-pA-Rzz"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k0p-Dz-Th9" userLabel="First Responder" sceneMemberID="firstResponder"/>

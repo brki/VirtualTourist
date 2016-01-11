@@ -16,7 +16,6 @@ class CollectionViewController: UIViewController {
 	@IBOutlet weak var collectionView: UICollectionView!
 	@IBOutlet weak var activityIndicator: UIActivityIndicatorView!
 	@IBOutlet weak var messageLabel: UILabel!
-	@IBOutlet weak var newCollectionButton: UIBarButtonItem!
 
 	var pin: Pin!
 	var context: NSManagedObjectContext { return pin.managedObjectContext! }
@@ -26,12 +25,22 @@ class CollectionViewController: UIViewController {
 
 	var queuedChanges = [FetchedResultChange]()
 
+	var refreshCollectionButton: UIBarButtonItem!
+	var downloadingPhotosIndicator: UIActivityIndicatorView!
+	var downloadingPhotosIndicatorNavigationItem: UIBarButtonItem!
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		collectionView.dataSource = self
 		collectionView.delegate = self
 		messageLabel.hidden = true
-		newCollectionButton.enabled = false
+
+		refreshCollectionButton = UIBarButtonItem(barButtonSystemItem: .Refresh, target: self, action: "refreshPhotosForPin:")
+		refreshCollectionButton.enabled = false
+		downloadingPhotosIndicator = UIActivityIndicatorView(activityIndicatorStyle: .White)
+		downloadingPhotosIndicator.hidesWhenStopped = true
+		downloadingPhotosIndicator.hidden = true
+		downloadingPhotosIndicatorNavigationItem = UIBarButtonItem(customView: downloadingPhotosIndicator)
 	}
 
 	override func viewWillAppear(animated: Bool) {
@@ -57,7 +66,7 @@ class CollectionViewController: UIViewController {
 
 	@IBAction func refreshPhotosForPin(sender: AnyObject) {
 		fetchedResultsController.delegate = nil
-		newCollectionButton.enabled = false
+		refreshCollectionButton.enabled = false
 		messageLabel.hidden = true
 		PinPhotoDownloadManager.reloadPhotos(self.pin)
 		presentPhotosDependingOnPinState()
@@ -86,17 +95,21 @@ class CollectionViewController: UIViewController {
 		}
 
 		hasData = false
+		var enableRefreshButton = false
+		var showDownloadingActivityIndicator = false
 
 		// The presenting view controller will have launched download operations, if necessary.
 		switch state {
 
 		case Pin.PHOTO_PROCESSING_STATE_FETCHING_PHOTOS:
 			hasData = true
+			showDownloadingActivityIndicator = true
 			showPhotos()
 			// Add observer so that we'll know when the photos are all downloaded.
 			addPinObserver()
 
 		case Pin.PHOTO_PROCESSING_STATE_COMPLETE:
+			enableRefreshButton = true
 			hasData = true
 			removePinObserver()
 			showPhotos()
@@ -110,6 +123,9 @@ class CollectionViewController: UIViewController {
 		default:
 			print("Unexpected photo processing state: \(pin.photoProcessingState)")
 		}
+
+		setRightBarButtonItems(enableRefreshButton, showDownloadingActivityIndicator: showDownloadingActivityIndicator)
+
 	}
 
 	/**
@@ -161,13 +177,6 @@ class CollectionViewController: UIViewController {
 				showCollectionView()
 			}
 		}
-
-		// If the photo downloading process has completed, enable the collection refresh button.
-		context.performBlockAndWait {
-			async_main {
-				self.newCollectionButton.enabled = self.pin.photoProcessingState == Pin.PHOTO_PROCESSING_STATE_COMPLETE
-			}
-		}
 	}
 
 	func showCollectionView() {
@@ -185,6 +194,18 @@ class CollectionViewController: UIViewController {
 		messageLabel.hidden = false
 		activityIndicator.stopAnimating()
 	}
+
+	// Show appropriate right bar button items
+	func setRightBarButtonItems(enableRefreshButton: Bool, showDownloadingActivityIndicator: Bool) {
+		refreshCollectionButton.enabled = enableRefreshButton
+		var items = [refreshCollectionButton!]
+		if showDownloadingActivityIndicator {
+			downloadingPhotosIndicator.startAnimating()
+			items.append(downloadingPhotosIndicatorNavigationItem!)
+		}
+		navigationItem.rightBarButtonItems = items
+	}
+
 }
 
 extension CollectionViewController: UICollectionViewDataSource {
