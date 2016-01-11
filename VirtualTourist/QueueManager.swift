@@ -13,7 +13,7 @@ enum OperationType {
 }
 
 /**
-Maintains a serial operation queue for each Pin, if one is needed.
+Maintains a serial operation queue for each Pin, if one is needed, and a separate concurrent queue for DownloadFileOperations.
 */
 struct QueueManager {
 
