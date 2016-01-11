@@ -15,10 +15,13 @@ stored on the filesystem.
 
 ## Implementation notes
 Usage of third party code libraries was intentionally avoided in order to comply with the Udacity project guidelines.
+However, the networking code is mostly taken from a previous Udacity project; this web client networking code is
+more complicated than it needs to be for the basic requirements of this project.
 
 ### Concurrent NSOperation subclasses
 It is perhaps overkill to use NSOperations for this project; I did it because I wanted to learn about using NSOperations.
-So, the code is likely more complicated than strictly necessary to accomplish the goals of the project.
+So, the code is likely more complicated than strictly necessary to accomplish the goals of the project.  The possibility
+to be able to declare dependencies between operations is quite nice, though.
 
 Two primary operations are used:
 
@@ -42,6 +45,19 @@ can be started again if necessary.
 When the application starts, it updates the photo data fetching / image downloading state for any pins that do not
 have a reasonable value; this handles the case where the application was killed without having a chance to perform
 it's clean-up tasks.
+
+### Parent / Child Core Data implementation
+The parent NSManagedObjectContext is using ``PrivateQueueConcurrencyType``, and the child context uses ``MainQueueConcurrencyType``.
+This allows the slower persist-to-sqlite action to happen on a background thread.
+
+### Detached error alert presentation
+The current view controller may not have any knowledge of an error that happens during background processing, but the user
+should be notified of these errors sometimes.  If an error occurs while downloading photo metadata or image files, an
+error alert is presented on the view controller that is currently in the foreground.
+
+### NSFetchedResultsController used for UICollectionView
+Altough designed to work with table views, the fetched results controller can also simplify the code for managing
+changes in collection views; it is used to that effect in this project.
 
 ## Attributions
 Thanks to [Font Awesome](http://fontawesome.io) for it's great open-source SVG fonts; the photo placeholder image
