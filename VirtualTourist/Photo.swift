@@ -15,6 +15,7 @@ class Photo: NSManagedObject {
 	enum PhotoSize: String {
 		case Small = "s"
 		case Medium = "m"
+		case Large1024 = "b"
 	}
 
 	static var persistentStoreContext = CoreDataStack.sharedInstance.managedObjectContext

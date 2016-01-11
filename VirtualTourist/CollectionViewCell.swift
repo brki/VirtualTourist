@@ -7,9 +7,11 @@
 //
 
 import UIKit
+import CoreData
 
 class CollectionViewCell: UICollectionViewCell {
 	var imageView: UIImageView!
+	var photoObjectId: NSManagedObjectID!
 
 	override init(frame: CGRect) {
 		super.init(frame: frame)

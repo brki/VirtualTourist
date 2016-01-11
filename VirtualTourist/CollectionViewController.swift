@@ -67,14 +67,60 @@ class CollectionViewController: UIViewController {
 	}()
 
 	/**
+	Long press action: show detail view.
+	*/
+	@IBAction func handleLongPress(sender: UILongPressGestureRecognizer) {
+		if sender.state != .Ended {
+			return
+		}
+		guard let indexPath = collectionView.indexPathForItemAtPoint(sender.locationInView(collectionView)),
+			cell = collectionView.cellForItemAtIndexPath(indexPath) as? CollectionViewCell else {
+				return
+		}
+
+		var cellPhoto: Photo?
+
+		context.performBlockAndWait {
+			if let obj = self.context.objectRegisteredForID(cell.photoObjectId) as? Photo {
+				cellPhoto = obj
+			}
+		}
+
+		guard let photo = cellPhoto else {
+			print("CollectionViewController.handleLongPress: Unable to get photo object from context")
+			return
+		}
+
+		if let photoDetailVC = storyboard?.instantiateViewControllerWithIdentifier("PhotoDetailViewController") as? PhotoDetailViewController {
+			photoDetailVC.thumbnailImage = cell.imageView.image
+			photoDetailVC.photo = photo
+			async_main {
+				// Hide the collection view before pushing for a nicer visual effect.
+				self.collectionView.hidden = true
+				self.isShowingPhotos = false
+				self.messageLabel.hidden = true
+				self.navigationController?.pushViewController(photoDetailVC, animated: true)
+			}
+		}
+	}
+
+	/**
 	Called when the user hits the refresh button; deletes all current photos for this pin and reloads from Flickr.
 	*/
 	func refreshPhotosForPin(sender: AnyObject) {
+
 		fetchedResultsController.delegate = nil
-		refreshCollectionButton.enabled = false
 		messageLabel.hidden = true
+
+		// Start operations to refresh photo list:
 		PinPhotoDownloadManager.reloadPhotos(self.pin)
+
+		// Update user interface:
 		presentPhotosDependingOnPinState()
+
+		// Scroll back to the top:
+		let topOffest = CGPointMake(0, -(self.collectionView?.contentInset.top ?? 0))
+		collectionView.setContentOffset(topOffest, animated: true)
 	}
 
 	/**
@@ -243,6 +289,7 @@ extension CollectionViewController: UICollectionViewDataSource {
 		} else {
 			cell.imageView.image = UIImage(named: "Placeholder")
 		}
+		cell.photoObjectId = photo.objectID
 		return cell
 	}
 }
@@ -252,6 +299,8 @@ extension CollectionViewController: UICollectionViewDelegate {
 	func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
 		context.performBlock {
 			if let photo = self.fetchedResultsController.objectAtIndexPath(indexPath) as? Photo {
+				// The context is not explicitly being saved here, it will be saved when the
+				// VC is popped, or when the application exits (at least exits normally).
 				self.context.deleteObject(photo)
 			}
 		}

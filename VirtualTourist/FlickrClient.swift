@@ -13,7 +13,7 @@ class FlickrClient: WebClient {
 	static let sharedClient = FlickrClient(baseURL: "https://api.flickr.com/services/")!
 
 	let API_KEY = "d6be7f27a3738a46448ff1c2638b62af"
-	let radiusMinutes = 1.25
+	let radiusMinutes = 1.25  // Approximately 2.3 km search radius.
 	lazy var defaultParams: [String: String] = {
 		return [
 			"method": "flickr.photos.search",

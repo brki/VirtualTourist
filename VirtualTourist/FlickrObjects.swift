@@ -32,7 +32,7 @@ struct FlickrPhotoSearchResponse {
 			pages = photos["pages"] as? Int,
 			total = intValFromExpectedString(photos["total"]),
 			photoArray = photos["photo"] as? [[String: AnyObject]] else {
-				print("FlickPhotoSearchResponse: unexpected format 1")
+				print("FlickPhotoSearchResponse: unexpected format")
 				return nil
 		}
 		self.page = page
