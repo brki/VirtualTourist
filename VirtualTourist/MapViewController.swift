@@ -43,11 +43,6 @@ class MapViewController: UIViewController {
 		super.viewDidDisappear(animated)
 	}
 
-	override func didReceiveMemoryWarning() {
-		super.didReceiveMemoryWarning()
-		// Dispose of any resources that can be recreated.
-	}
-
 	// Add existing pins to the map.
 	func addSavedPinsToMap() {
 		var pins: [Pin]
@@ -91,15 +86,9 @@ class MapViewController: UIViewController {
 				droppedPin.longitude = coordinate.longitude
 			}
 			CoreDataStack.saveContext(context)
-			launchOperations(droppedPin)
+			PinPhotoDownloadManager.launchOperations(droppedPin)
 			draggedAnnotation = nil
 			draggedPin = nil
-		}
-	}
-
-	func launchOperations(pin: Pin) {
-		if PinPhotoDownloadManager.launchOperations(pin) {
-			startMontoringPhotoProcessingState(pin)
 		}
 	}
 
@@ -141,58 +130,11 @@ extension MapViewController: MKMapViewDelegate {
 		destinationVC.pin = pinAnnotation.pin
 
 		// In case the photo data / photos have not yet been downloaded (for example due to a previous network error), retry:
-		launchOperations(pinAnnotation.pin)
+		PinPhotoDownloadManager.launchOperations(pinAnnotation.pin)
 
 		// Deselect the annotation before pushing, so that it won't be selected when returning to this view controller:
 		mapView.selectedAnnotations.removeAll()
 
 		navigationController?.pushViewController(destinationVC, animated: true)
-	}
-}
-
-// MARK observation of pin's photoProcessingState
-extension MapViewController {
-
-	/**
-	Start monitoring pin.photoProcessingState, so that an error can be reported if one happened.
-	*/
-	func startMontoringPhotoProcessingState(pin: Pin) {
-		pin.addObserver(self, forKeyPath: "photoProcessingState", options: NSKeyValueObservingOptions.New, context: &PinStatusContext)
-	}
-
-	/**
-	If an error occurred while downloading the data or photos, notify the user.
-	*/
-	override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
-		guard context == &PinStatusContext else {
-			super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
-			return
-		}
-
-		guard let state = change?[NSKeyValueChangeNewKey] as? Int else {
-			return
-		}
-
-		guard let pin = object as? Pin else {
-			print("MapViewController.observeValueForKeyPath: unexpected object value: \(object)")
-			return
-		}
-
-		var finished = false
-
-		switch state {
-		case Pin.PHOTO_PROCESSING_STATE_COMPLETE, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA, Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_DOWNLOADING_PHOTOS:
-			finished = true
-
-		default:
-			// Still getting data or photos.
-			break
-		}
-
-		// If the photo processing has completed, either successfully or by erroring out, stop
-		// observing the pin's photoProcessingState.
-		if finished {
-			pin.removeObserver(self, forKeyPath: "photoProcessingState", context: &PinStatusContext)
-		}
 	}
 }
