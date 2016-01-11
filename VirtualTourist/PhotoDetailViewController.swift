@@ -21,6 +21,10 @@ class PhotoDetailViewController: UIViewController {
 		addDownloadOperation()
 	}
 
+	override func viewWillDisappear(animated: Bool) {
+		navigationController?.navigationBarHidden = false
+	}
+
 	func addDownloadOperation() {
 		let operation = DownloadSingleFileOperation(url: photo.URLForSize(.Large1024)) { data, error in
 			guard let controller = self.navigationController?.visibleViewController as? PhotoDetailViewController where controller == self else {
@@ -43,4 +47,9 @@ class PhotoDetailViewController: UIViewController {
 		QueueManager.filesDownloadQueue.addOperation(operation)
 	}
 	
+	@IBAction func imageViewTapped(sender: UITapGestureRecognizer) {
+		if let navController = navigationController {
+			navController.navigationBarHidden = !navController.navigationBarHidden
+		}
+	}
 }

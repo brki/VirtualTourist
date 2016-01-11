@@ -152,15 +152,24 @@
         <scene sceneID="ZEm-XE-ip6">
             <objects>
                 <viewController storyboardIdentifier="PhotoDetailViewController" id="2Nz-Db-Ja2" customClass="PhotoDetailViewController" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
-                    <imageView key="view" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" id="IVr-Of-6K6">
+                    <imageView key="view" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" id="IVr-Of-6K6">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <gestureRecognizers/>
+                        <connections>
+                            <outletCollection property="gestureRecognizers" destination="eGA-fW-fXM" appends="YES" id="CrD-hc-nen"/>
+                        </connections>
                     </imageView>
                     <connections>
                         <outlet property="imageView" destination="IVr-Of-6K6" id="B6e-cz-C7J"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="0je-na-g5p" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <tapGestureRecognizer id="eGA-fW-fXM">
+                    <connections>
+                        <action selector="imageViewTapped:" destination="2Nz-Db-Ja2" id="0Ca-eF-mSo"/>
+                    </connections>
+                </tapGestureRecognizer>
             </objects>
             <point key="canvasLocation" x="1899" y="477"/>
         </scene>
