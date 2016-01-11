@@ -23,17 +23,22 @@ class MapViewController: UIViewController {
 	@IBOutlet weak var mapView: MKMapView!
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		// Register the context so that the current state can be saved when the application terminates.
 		CoreDataStack.sharedInstance.registerContext(context)
+
 		mapView.delegate = self
+
 		addSavedPinsToMap()
 	}
 
 	override func viewWillAppear(animated: Bool) {
+		// Do not show navigation bar for this view.
 		navigationController?.navigationBar.hidden = true
 		super.viewWillAppear(animated)
 	}
 
 	override func viewWillDisappear(animated: Bool) {
+		// Unhide navigation bar so that the animated transition looks nice.
 		navigationController?.navigationBar.hidden = false
 		super.viewDidDisappear(animated)
 	}
@@ -43,6 +48,7 @@ class MapViewController: UIViewController {
 		// Dispose of any resources that can be recreated.
 	}
 
+	// Add existing pins to the map.
 	func addSavedPinsToMap() {
 		var pins: [Pin]
 		do {
@@ -58,7 +64,7 @@ class MapViewController: UIViewController {
 	}
 
 	/**
-	Long press: add Pin annotation.
+	Long press: start handling dragging and dropping of Pin.
 	*/
 	@IBAction func handleLongPress(sender: UILongPressGestureRecognizer) {
 		let touchPoint = sender.locationInView(self.mapView)
@@ -69,11 +75,16 @@ class MapViewController: UIViewController {
 		}
 
 		if sender.state == .Began {
+
+			// Pin is being dragged.
 			context.performBlockAndWait {
 				self.draggedPin = Pin(latitude: coordinate.latitude, longitude: coordinate.longitude, managedObjectContext: self.context)
 			}
 			draggedAnnotation = addAnnotationForPin(draggedPin!)
+
 		} else if sender.state == .Ended {
+
+			// Pin has been dropped.
 			let droppedPin = draggedPin!
 			context.performBlockAndWait {
 				droppedPin.latitude = coordinate.latitude
@@ -92,6 +103,7 @@ class MapViewController: UIViewController {
 		}
 	}
 
+	// Add Pin to map.
 	func addAnnotationForPin(pin: Pin) -> MKPointAnnotation {
 		let annotation = PinAnnotation(pin: pin)
 		mapView.addAnnotation(annotation)

@@ -23,8 +23,10 @@ class CollectionViewController: UIViewController {
 	var isObservingPinState = false
 	var isShowingPhotos = false
 
+	// Holds the list of changes provided by the fetched results controller between controllerWillChangeContent() and controllerDidChangeContent():
 	var queuedChanges = [FetchedResultChange]()
 
+	// Right side navigation bar items:
 	var refreshCollectionButton: UIBarButtonItem!
 	var downloadingPhotosIndicator: UIActivityIndicatorView!
 	var downloadingPhotosIndicatorNavigationItem: UIBarButtonItem!
@@ -35,6 +37,7 @@ class CollectionViewController: UIViewController {
 		collectionView.delegate = self
 		messageLabel.hidden = true
 
+		// Create the right side navigation bar items:
 		refreshCollectionButton = UIBarButtonItem(barButtonSystemItem: .Refresh, target: self, action: "refreshPhotosForPin:")
 		refreshCollectionButton.enabled = false
 		downloadingPhotosIndicator = UIActivityIndicatorView(activityIndicatorStyle: .White)
@@ -53,7 +56,6 @@ class CollectionViewController: UIViewController {
 	}
 
 	lazy var fetchedResultsController: NSFetchedResultsController = {
-
 		var frc: NSFetchedResultsController!
 		self.context.performBlockAndWait {
 			let fetchRequest = NSFetchRequest(entityName: "Photo")
@@ -64,7 +66,10 @@ class CollectionViewController: UIViewController {
 		return frc
 	}()
 
-	@IBAction func refreshPhotosForPin(sender: AnyObject) {
+	/**
+	Called when the user hits the refresh button; deletes all current photos for this pin and reloads from Flickr.
+	*/
+	func refreshPhotosForPin(sender: AnyObject) {
 		fetchedResultsController.delegate = nil
 		refreshCollectionButton.enabled = false
 		messageLabel.hidden = true
@@ -72,6 +77,9 @@ class CollectionViewController: UIViewController {
 		presentPhotosDependingOnPinState()
 	}
 
+	/**
+	(Re)fetch the data for the fetchedResultsController.
+	*/
 	func refreshFetchRequest() {
 		context.performBlockAndWait {
 			do {
@@ -84,7 +92,7 @@ class CollectionViewController: UIViewController {
 	}
 
 	/**
-	Show photos, or an activity indicator, or a label saying that there are no photos.
+	Show photos, or an activity indicator, or a label saying that there are no photos.  Also ensure the appropriate right side navbar items are shown.
 	*/
 	func presentPhotosDependingOnPinState() {
 		// If an ongoing SearchOperation exists for this pin.photosVersion, show a spinner indicator and wait until there is data.
@@ -195,7 +203,7 @@ class CollectionViewController: UIViewController {
 		activityIndicator.stopAnimating()
 	}
 
-	// Show appropriate right bar button items
+	// Show appropriate right bar button items.
 	func setRightBarButtonItems(enableRefreshButton: Bool, showDownloadingActivityIndicator: Bool) {
 		refreshCollectionButton.enabled = enableRefreshButton
 		var items = [refreshCollectionButton!]
