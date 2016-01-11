@@ -13,16 +13,24 @@ class PhotoDetailViewController: UIViewController {
 	var thumbnailImage: UIImage!
 	var photo: Photo!
 
+	@IBOutlet var scrollView: UIScrollView!
 	@IBOutlet var imageView: UIImageView!
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		scrollView.delegate = self
+		configureZooming()
 		imageView.image = thumbnailImage
 		addDownloadOperation()
 	}
 
 	override func viewWillDisappear(animated: Bool) {
 		navigationController?.navigationBarHidden = false
+	}
+
+	func configureZooming() {
+		scrollView.minimumZoomScale = 1.0
+		scrollView.maximumZoomScale = 4.0
 	}
 
 	func addDownloadOperation() {
@@ -51,5 +59,11 @@ class PhotoDetailViewController: UIViewController {
 		if let navController = navigationController {
 			navController.navigationBarHidden = !navController.navigationBarHidden
 		}
+	}
+}
+
+extension PhotoDetailViewController: UIScrollViewDelegate {
+	func viewForZoomingInScrollView(scrollView: UIScrollView) -> UIView? {
+		return imageView
 	}
 }
