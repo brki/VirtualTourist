@@ -137,7 +137,6 @@
                         <outlet property="activityIndicator" destination="eC4-e1-65o" id="Qdi-u4-Qs1"/>
                         <outlet property="collectionView" destination="Y3K-rr-Kce" id="eyz-3L-Mli"/>
                         <outlet property="messageLabel" destination="Wdq-QG-4lN" id="18M-MM-T9W"/>
-                        <segue destination="P5Q-hq-vXM" kind="show" id="rgK-fv-wFL"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k0p-Dz-Th9" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -150,45 +149,63 @@
             <point key="canvasLocation" x="1105" y="477"/>
         </scene>
         <!--Photo Detail View Controller-->
-        <scene sceneID="2zb-Pi-ybi">
+        <scene sceneID="sW9-Tv-ez7">
             <objects>
-                <viewController storyboardIdentifier="PhotoDetailViewController" id="P5Q-hq-vXM" customClass="PhotoDetailViewController" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="PhotoDetailViewController" automaticallyAdjustsScrollViewInsets="NO" id="PMx-d2-vum" customClass="PhotoDetailViewController" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
-                        <viewControllerLayoutGuide type="top" id="LSy-qV-99q"/>
-                        <viewControllerLayoutGuide type="bottom" id="dm8-vl-shy"/>
+                        <viewControllerLayoutGuide type="top" id="UBf-l7-b0x"/>
+                        <viewControllerLayoutGuide type="bottom" id="keJ-xH-Afa"/>
                     </layoutGuides>
-                    <scrollView key="view" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" ambiguous="YES" id="R8Q-7Z-SVm">
+                    <view key="view" contentMode="scaleToFill" id="Kss-Y5-Kau">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="u2p-5u-EqQ">
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="hYj-RZ-277">
                                 <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
-                                <gestureRecognizers/>
-                                <connections>
-                                    <outletCollection property="gestureRecognizers" destination="2TJ-HI-WQM" appends="YES" id="kIj-Fa-PzW"/>
-                                </connections>
-                            </imageView>
+                                <subviews>
+                                    <imageView contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="nR1-3D-sbd">
+                                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                                        <gestureRecognizers/>
+                                        <connections>
+                                            <outletCollection property="gestureRecognizers" destination="iyt-b7-Pyr" appends="YES" id="roB-dW-Dh9"/>
+                                        </connections>
+                                    </imageView>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstAttribute="bottom" secondItem="nR1-3D-sbd" secondAttribute="bottom" id="YJU-vG-MBo"/>
+                                    <constraint firstAttribute="trailing" secondItem="nR1-3D-sbd" secondAttribute="trailing" id="fRS-hm-BjO"/>
+                                    <constraint firstItem="nR1-3D-sbd" firstAttribute="leading" secondItem="hYj-RZ-277" secondAttribute="leading" id="gRp-yt-blz"/>
+                                    <constraint firstItem="nR1-3D-sbd" firstAttribute="top" secondItem="hYj-RZ-277" secondAttribute="top" id="wu4-g3-VJL"/>
+                                </constraints>
+                            </scrollView>
                         </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
-                            <constraint firstItem="u2p-5u-EqQ" firstAttribute="centerY" secondItem="R8Q-7Z-SVm" secondAttribute="centerY" id="434-7i-H8r"/>
-                            <constraint firstItem="u2p-5u-EqQ" firstAttribute="height" secondItem="R8Q-7Z-SVm" secondAttribute="height" id="K1j-yV-g2P"/>
-                            <constraint firstItem="u2p-5u-EqQ" firstAttribute="centerX" secondItem="R8Q-7Z-SVm" secondAttribute="centerX" id="MYE-bs-f7H"/>
-                            <constraint firstItem="u2p-5u-EqQ" firstAttribute="width" secondItem="R8Q-7Z-SVm" secondAttribute="width" id="Zyl-qd-5zU"/>
+                            <constraint firstItem="keJ-xH-Afa" firstAttribute="top" secondItem="hYj-RZ-277" secondAttribute="bottom" id="8to-er-3kS"/>
+                            <constraint firstItem="hYj-RZ-277" firstAttribute="top" secondItem="Kss-Y5-Kau" secondAttribute="top" id="DJ3-wt-6Uw"/>
+                            <constraint firstItem="nR1-3D-sbd" firstAttribute="height" secondItem="Kss-Y5-Kau" secondAttribute="height" placeholder="YES" id="DgM-Hy-6nf"/>
+                            <constraint firstItem="hYj-RZ-277" firstAttribute="leading" secondItem="Kss-Y5-Kau" secondAttribute="leading" id="da1-dY-JSC"/>
+                            <constraint firstItem="nR1-3D-sbd" firstAttribute="width" secondItem="Kss-Y5-Kau" secondAttribute="width" placeholder="YES" id="sah-JV-1pf"/>
+                            <constraint firstAttribute="trailing" secondItem="hYj-RZ-277" secondAttribute="trailing" id="zWu-3q-6zm"/>
                         </constraints>
-                    </scrollView>
+                    </view>
                     <connections>
-                        <outlet property="imageView" destination="u2p-5u-EqQ" id="WsT-LX-bEg"/>
-                        <outlet property="scrollView" destination="R8Q-7Z-SVm" id="0x1-2l-z84"/>
+                        <outlet property="imageConstraintBottom" destination="YJU-vG-MBo" id="Bn1-Yc-t3E"/>
+                        <outlet property="imageConstraintLeft" destination="gRp-yt-blz" id="9oE-fP-M5I"/>
+                        <outlet property="imageConstraintRight" destination="fRS-hm-BjO" id="lGV-bF-5vM"/>
+                        <outlet property="imageConstraintTop" destination="wu4-g3-VJL" id="xlQ-oL-zDB"/>
+                        <outlet property="imageView" destination="nR1-3D-sbd" id="Z1w-cA-dPw"/>
+                        <outlet property="scrollView" destination="hYj-RZ-277" id="EjW-Fc-c9A"/>
                     </connections>
                 </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="Cbl-qt-YbY" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <tapGestureRecognizer id="2TJ-HI-WQM">
+                <placeholder placeholderIdentifier="IBFirstResponder" id="yPY-UE-c9h" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <tapGestureRecognizer id="iyt-b7-Pyr">
                     <connections>
-                        <action selector="imageViewTapped:" destination="P5Q-hq-vXM" id="Rat-fY-Lr5"/>
+                        <action selector="imageViewTapped:" destination="PMx-d2-vum" id="8Hu-Dn-B4h"/>
                     </connections>
                 </tapGestureRecognizer>
             </objects>
-            <point key="canvasLocation" x="1853" y="477"/>
+            <point key="canvasLocation" x="1527" y="584"/>
         </scene>
     </scenes>
 </document>
