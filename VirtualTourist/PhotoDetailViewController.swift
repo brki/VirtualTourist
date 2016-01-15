@@ -25,6 +25,7 @@ class PhotoDetailViewController: UIViewController {
 	var thumbnailImage: UIImage!
 	var photo: Photo!
 	var lastZoomScale: CGFloat = 0.0
+	var originalNavbarTranslucent: Bool?
 
 	@IBOutlet var scrollView: UIScrollView!
 	@IBOutlet var imageView: UIImageView!
@@ -32,9 +33,16 @@ class PhotoDetailViewController: UIViewController {
 	@IBOutlet weak var imageConstraintRight: NSLayoutConstraint!
 	@IBOutlet weak var imageConstraintBottom: NSLayoutConstraint!
 	@IBOutlet weak var imageConstraintTop: NSLayoutConstraint!
+	@IBOutlet weak var imageCenterXConstraint: NSLayoutConstraint!
+	@IBOutlet weak var imageCenterYConstraint: NSLayoutConstraint!
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		if let navBar = navigationController?.navigationBar {
+			originalNavbarTranslucent = navBar.translucent
+			navBar.translucent = false
+		}
+
 		scrollView.delegate = self
 		scrollView.maximumZoomScale = 4.0
 		addDownloadOperation()
@@ -44,12 +52,19 @@ class PhotoDetailViewController: UIViewController {
 		super.viewWillAppear(animated)
 		if imageView.image == nil {
 			imageView.image = thumbnailImage
+			scrollView.zoomScale = 1.0
 		}
-		updateZoom()
+	}
+
+	override func viewDidAppear(animated: Bool) {
+		super.viewDidDisappear(animated)
 	}
 
 	override func viewWillDisappear(animated: Bool) {
-		navigationController?.navigationBarHidden = false
+		if let navBar = navigationController?.navigationBar {
+			navBar.hidden = false
+			navBar.translucent = originalNavbarTranslucent!
+		}
 		UIApplication.sharedApplication().statusBarHidden = false
 	}
 
@@ -66,15 +81,7 @@ class PhotoDetailViewController: UIViewController {
 		let hidden = !navController.navigationBarHidden
 		navController.navigationBarHidden = hidden
 		app.statusBarHidden = hidden
-
-//		let verticalAdjustment = (navController.navigationBar.frame.height + app.statusBarFrame.height) / 2
-//		if fullScreen {
-//			scrollViewCenterYToSuperviewCenterY.constant = 0
-//			scrollView.contentSize.height -= verticalAdjustment
-//		} else {
-//			scrollViewCenterYToSuperviewCenterY.constant = -verticalAdjustment
-//			scrollView.contentSize.height += verticalAdjustment
-//		}
+		updateZoom()
 	}
 
 	func addDownloadOperation() {
@@ -93,6 +100,8 @@ class PhotoDetailViewController: UIViewController {
 			}
 			async_main {
 				self.imageView.image = image
+				self.imageCenterXConstraint.priority = 0.1
+				self.imageCenterYConstraint.priority = 0.1
 				self.updateZoom()
 			}
 		}
@@ -117,6 +126,7 @@ class PhotoDetailViewController: UIViewController {
 	}
 
 	func updateConstraints() {
+		print("updateConstraints...")
 		if let image = imageView.image {
 			let imageWidth = image.size.width
 			let imageHeight = image.size.height
