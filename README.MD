@@ -8,10 +8,13 @@ This was written to work with Swift 2.1.
 
 ## What it does
 The app lets you drop pins on a map.  When you drop a pin, photo thumbnails associated with that location
-are downloaded from Flickr and stored locally.  Tapping on an existing pin shows a collection view
-with the associated photos.  Inside the collection view, tapping on a photo removes it from the collection.
-The pins and their associated photo's information are stored using Core Data; the photos themselves are
-stored on the filesystem.
+are downloaded from Flickr and stored locally.  The pins and their associated photo's information are stored
+using Core Data; the photos themselves are stored on the filesystem.
+
+Tapping on an existing pin shows a collection view with the associated photos.  Inside the collection view,
+tapping on a photo removes it from the collection.  A slightly longer press on the photo will show a detail
+view of the photo (a larger version is fetched from Flickr).  In the detail view, you can zoom in and pan
+around on the photo.  A finger tap will hide / show the navigation and status bars.
 
 ## Implementation notes
 Usage of third party code libraries was intentionally avoided in order to comply with the Udacity project guidelines.
