@@ -154,9 +154,9 @@ class PhotoDetailViewController: UIViewController {
 
 	/**
 	Zoom to show as much image as possible unless image is smaller than the scroll view.
-	
+
 	If updateCurrentZoomScale is false, then do not set zoomScale to minZoom.  Even if false,
-    the zoomScale will be adjusted by a tiny bit, so that scrollViewDidZoom will be called.
+	the zoomScale will be adjusted by a tiny bit, so that scrollViewDidZoom will be called.
 	*/
 	private func updateZoom(updateCurrentZoomScale: Bool = true) {
 		if let image = imageView.image {
