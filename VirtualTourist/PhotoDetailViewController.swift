@@ -22,7 +22,7 @@ status bars.
 */
 class PhotoDetailViewController: UIViewController {
 
-	var thumbnailImage: UIImage!
+	var thumbnailImage: UIImage?
 	var photo: Photo!
 	var lastZoomScale: CGFloat = 0.0
 	var originalNavbarTranslucent: Bool?
@@ -33,8 +33,7 @@ class PhotoDetailViewController: UIViewController {
 	@IBOutlet weak var imageConstraintRight: NSLayoutConstraint!
 	@IBOutlet weak var imageConstraintBottom: NSLayoutConstraint!
 	@IBOutlet weak var imageConstraintTop: NSLayoutConstraint!
-	@IBOutlet weak var imageCenterXConstraint: NSLayoutConstraint!
-	@IBOutlet weak var imageCenterYConstraint: NSLayoutConstraint!
+	@IBOutlet weak var thumbnailImageView: UIImageView!
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -50,17 +49,14 @@ class PhotoDetailViewController: UIViewController {
 
 	override func viewWillAppear(animated: Bool) {
 		super.viewWillAppear(animated)
-		if imageView.image == nil {
-			imageView.image = thumbnailImage
-			scrollView.zoomScale = 1.0
+		if let image = thumbnailImage {
+			thumbnailImageView.image = image
+			thumbnailImage = nil
 		}
 	}
 
-	override func viewDidAppear(animated: Bool) {
-		super.viewDidDisappear(animated)
-	}
-
 	override func viewWillDisappear(animated: Bool) {
+		super.viewDidDisappear(animated)
 		if let navBar = navigationController?.navigationBar {
 			navBar.hidden = false
 			navBar.translucent = originalNavbarTranslucent!
@@ -79,9 +75,11 @@ class PhotoDetailViewController: UIViewController {
 		let app = UIApplication.sharedApplication()
 		let navController = navigationController!
 		let hidden = !navController.navigationBarHidden
-		navController.navigationBarHidden = hidden
-		app.statusBarHidden = hidden
-		updateZoom()
+		UIView.animateWithDuration(0.4) {
+			navController.navigationBarHidden = hidden
+			app.statusBarHidden = hidden
+			self.updateZoom(false)
+		}
 	}
 
 	func addDownloadOperation() {
@@ -100,8 +98,8 @@ class PhotoDetailViewController: UIViewController {
 			}
 			async_main {
 				self.imageView.image = image
-				self.imageCenterXConstraint.priority = 0.1
-				self.imageCenterYConstraint.priority = 0.1
+				self.thumbnailImageView.hidden = true
+				self.thumbnailImageView.image = nil
 				self.updateZoom()
 			}
 		}
@@ -126,7 +124,6 @@ class PhotoDetailViewController: UIViewController {
 	}
 
 	func updateConstraints() {
-		print("updateConstraints...")
 		if let image = imageView.image {
 			let imageWidth = image.size.width
 			let imageHeight = image.size.height
@@ -155,20 +152,34 @@ class PhotoDetailViewController: UIViewController {
 		}
 	}
 
-	// Zoom to show as much image as possible unless image is smaller than the scroll view
-	private func updateZoom() {
+	/**
+	Zoom to show as much image as possible unless image is smaller than the scroll view.
+	
+	If updateCurrentZoomScale is false, then do not set zoomScale to minZoom.  Even if false,
+    the zoomScale will be adjusted by a tiny bit, so that scrollViewDidZoom will be called.
+	*/
+	private func updateZoom(updateCurrentZoomScale: Bool = true) {
 		if let image = imageView.image {
 			var minZoom = min(scrollView.bounds.size.width / image.size.width, scrollView.bounds.size.height / image.size.height)
 
-			if minZoom > 1 { minZoom = 1 }
+			if minZoom > 1 {
+				minZoom = 1
+			}
 
 			scrollView.minimumZoomScale = minZoom
 
 			// Force scrollViewDidZoom fire if zoom did not change
-			if minZoom == lastZoomScale { minZoom += 0.000001 }
+			let noZoomChange = minZoom == lastZoomScale
+			if noZoomChange {
+				minZoom += 0.000001
+			}
 
-			scrollView.zoomScale = minZoom
-			lastZoomScale = minZoom
+			if updateCurrentZoomScale {
+				scrollView.zoomScale = minZoom
+			} else {
+				scrollView.zoomScale += 0.000001
+			}
+			lastZoomScale = scrollView.zoomScale
 		}
 	}
 }

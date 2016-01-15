@@ -37,7 +37,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 		}
 		QueueManager.filesDownloadQueue.cancelAllOperations()
 		CoreDataStack.sharedInstance.saveAllRegisteredContexts()
-		NSLog("bye bye")
 	}
 
 	func applicationWillEnterForeground(application: UIApplication) {
