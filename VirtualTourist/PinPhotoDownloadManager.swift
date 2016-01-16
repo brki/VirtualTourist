@@ -184,7 +184,11 @@ class PinPhotoDownloadManager {
 			oldVersion = pin.photosVersion
 			pin.photosVersion += 1
 			pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_NEW
-			pin.photos = NSSet()
+
+			// Delete all photos
+			for photo in pin.photos {
+				context.deleteObject(photo as! Photo)
+			}
 		}
 		CoreDataStack.saveContext(context)
 
