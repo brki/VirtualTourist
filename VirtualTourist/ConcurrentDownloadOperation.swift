@@ -11,7 +11,7 @@ import Foundation
 class ConcurrentDownloadOperation: ConcurrentOperation {
 
 	// Holds reference to currently executing tasks
-	var sessionTasks = [String: NSURLSessionTask]()
+	var _sessionTasks = [String: NSURLSessionTask]()
 
 	// Error handler closure that will be called if an error occurred during downloading.
 	var downloadErrorHandler: ((NSError) -> Void)? = nil
@@ -28,11 +28,23 @@ class ConcurrentDownloadOperation: ConcurrentOperation {
 		return queue
 	}()
 
+	func addSessionTask(key: String, task: NSURLSessionTask) {
+		objc_sync_enter(self)
+		_sessionTasks[key] = task
+		objc_sync_exit(self)
+	}
+
+	func removeSessionTask(key: String) {
+		objc_sync_enter(self)
+		_sessionTasks[key] = nil
+		objc_sync_exit(self)
+	}
+
 	/**
 	Ensure all sub-tasks are cancelled.
 	*/
 	override func cleanup() {
-		for (key, task) in sessionTasks {
+		for (key, task) in _sessionTasks {
 
 			switch task.state {
 			case .Running, .Suspended:
@@ -41,7 +53,7 @@ class ConcurrentDownloadOperation: ConcurrentOperation {
 				break
 			}
 
-			sessionTasks[key] = nil
+			_sessionTasks[key] = nil
 		}
 
 		concurrentQueue.cancelAllOperations()

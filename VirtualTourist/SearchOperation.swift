@@ -93,7 +93,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 			self.neededPages = self.endPage - self.startPage + 1
 			self.getMoreResponsePages(searchResponse)
 		}
-		self.sessionTasks["1"] = firstPageTask
+		self.addSessionTask("1", task: firstPageTask)
 	}
 
 	func getMoreResponsePages(response: FlickrPhotoSearchResponse) {
@@ -123,7 +123,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 						self.handleEndOfExecution()
 					}
 				}
-				self.sessionTasks[String(page)] = task
+				self.addSessionTask(String(page), task: task)
 			}
 		}
 	}
@@ -153,7 +153,7 @@ class SearchOperation: ConcurrentDownloadOperation {
 
 	func fetchResultsPage(page: Int, successHandler: (FlickrPhotoSearchResponse) -> Void) -> NSURLSessionDataTask {
 		let task = client.searchLocation(page, latitude: latitude, longitude: longitude, perPage: perPage) { jsonObject, response, error in
-			self.sessionTasks[String(page)] = nil
+			self.removeSessionTask(String(page))
 
 			guard !self.cancelled && self.error == nil else {
 				return
