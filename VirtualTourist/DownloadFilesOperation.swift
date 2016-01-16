@@ -126,6 +126,13 @@ class DownloadFilesOperation: ConcurrentDownloadOperation {
 				}
 
 				if let err = error {
+					guard !(err.domain == "DownloadSingleFileOperation" && err.code == DownloadSingleFileOperation.ErrorCode.UnexpectedHTTPResponseCode.rawValue) else {
+						// A response was returned, but not a 2xx response (e.g. 404, 500, etc.).
+						// This may be a transient error.  The download may succeed the next time the user tries to view these photos.
+						// Note: this may occur with a 404 error if the desired photo size is not available.
+						print("There was a \(err.userInfo["errorCode"]!) error while trying to download \(url.absoluteString)")
+						return
+					}
 					self.error = err
 					self.handleEndOfExecution()
 					return

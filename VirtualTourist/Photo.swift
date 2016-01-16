@@ -51,7 +51,7 @@ class Photo: NSManagedObject {
 	}
 
 	override func prepareForDeletion() {
-		if let storageURL = fileURL {
+		if let storageURL = fileURL where downloaded == true {
 			do {
 				try NSFileManager.defaultManager().removeItemAtURL(storageURL)
 			} catch {

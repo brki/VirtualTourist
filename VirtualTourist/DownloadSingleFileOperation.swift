@@ -10,6 +10,11 @@ import Foundation
 
 class DownloadSingleFileOperation: ConcurrentOperation {
 
+	enum ErrorCode: Int {
+		case ErrorFetchingFile = 1
+		case UnexpectedHTTPResponseCode = 2
+	}
+
 	var url: NSURL
 	var handler: ((NSData?, NSError?) -> Void)?
 	var task: NSURLSessionDataTask?
@@ -39,12 +44,12 @@ class DownloadSingleFileOperation: ConcurrentOperation {
 			if let err = error {
 
 				// If the error is a NSURLErrorDomain error, use it's description, otherwise use something generic.
-				var errorDescription = "Error fetching photo list"
+				var errorDescription = "Error fetching file"
 				if err.domain == "NSURLErrorDomain" {
 					errorDescription = err.localizedDescription
 				}
 
-				self.error = self.makeNSError(1, localizedDescription: errorDescription, underlyingError: err)
+				self.error = self.makeNSError(ErrorCode.ErrorFetchingFile.rawValue, localizedDescription: errorDescription, underlyingError: err)
 
 			} else {
 
@@ -54,7 +59,8 @@ class DownloadSingleFileOperation: ConcurrentOperation {
 				if httpResponse.statusCode == 200 {
 					self.data = data
 				} else {
-					self.error = self.makeNSError(2, localizedDescription: "Unexpected response code: \(httpResponse.statusCode)")
+					let description = "Unexpected response code: \(httpResponse.statusCode)"
+					self.error = self.makeNSError(ErrorCode.UnexpectedHTTPResponseCode.rawValue, localizedDescription: description, userInfo: ["errorCode": httpResponse.statusCode])
 				}
 
 			}
