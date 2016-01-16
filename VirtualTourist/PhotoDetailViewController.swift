@@ -79,7 +79,7 @@ class PhotoDetailViewController: UIViewController {
 		let app = UIApplication.sharedApplication()
 		let navController = navigationController!
 		let hidden = !navController.navigationBarHidden
-		UIView.animateWithDuration(0.4) {
+		UIView.animateWithDuration(0.085) {
 			navController.navigationBarHidden = hidden
 			app.statusBarHidden = hidden
 			self.updateZoom(false)
