@@ -141,7 +141,7 @@ class CollectionViewController: UIViewController {
 	Show photos, or an activity indicator, or a label saying that there are no photos.  Also ensure the appropriate right side navbar items are shown.
 	*/
 	func presentPhotosDependingOnPinState() {
-		// If an ongoing SearchOperation exists for this pin.photosVersion, show a spinner indicator and wait until there is data.
+		// If an ongoing SearchOperation exists for this pin, show a spinner indicator and wait until there is data.
 		var state = -1
 
 		context.performBlockAndWait {

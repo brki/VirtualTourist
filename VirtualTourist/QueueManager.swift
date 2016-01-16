@@ -13,13 +13,22 @@ enum OperationType {
 }
 
 /**
-Maintains a serial operation queue for each Pin, if one is needed, and a separate concurrent queue for DownloadFileOperations.
+Maintains queues used by this app:
+- a serial operation queue for each Pin, if one is needed
+- a concurrent queue for DownloadFileOperations
+- a serial queue for file operations
 */
 struct QueueManager {
 
 	static var filesDownloadQueue: NSOperationQueue = {
 		let queue = NSOperationQueue()
 		queue.maxConcurrentOperationCount = 2
+		return queue
+	}()
+
+	static var fileOperationsQueue: NSOperationQueue = {
+		let queue = NSOperationQueue()
+		queue.maxConcurrentOperationCount = 1
 		return queue
 	}()
 

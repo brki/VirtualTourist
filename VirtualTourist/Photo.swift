@@ -52,10 +52,12 @@ class Photo: NSManagedObject {
 
 	override func prepareForDeletion() {
 		if let storageURL = fileURL where downloaded == true {
-			do {
-				try NSFileManager.defaultManager().removeItemAtURL(storageURL)
-			} catch {
-				print ("Error while deleting photo file: \(error)")
+			QueueManager.fileOperationsQueue.addOperationWithBlock {
+				do {
+					try NSFileManager.defaultManager().removeItemAtURL(storageURL)
+				} catch {
+					print ("Error while deleting photo file: \(error)")
+				}
 			}
 		}
 		super.prepareForDeletion()

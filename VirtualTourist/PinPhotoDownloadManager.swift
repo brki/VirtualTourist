@@ -178,11 +178,8 @@ class PinPhotoDownloadManager {
 	}
 
 	static func reloadPhotos(pin: Pin) {
-		var oldVersion = -1
 		let context = pin.managedObjectContext!
 		context.performBlockAndWait {
-			oldVersion = pin.photosVersion
-			pin.photosVersion += 1
 			pin.photoProcessingState = Pin.PHOTO_PROCESSING_STATE_NEW
 
 			// Delete all photos
@@ -191,9 +188,6 @@ class PinPhotoDownloadManager {
 			}
 		}
 		CoreDataStack.saveContext(context)
-
-		// Remove the previous version directory, with all photos.
-		pin.deleteDirectoryForVersion(oldVersion)
 
 		// Start loading new photos:
 		launchOperations(pin)

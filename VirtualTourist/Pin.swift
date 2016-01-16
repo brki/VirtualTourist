@@ -40,11 +40,8 @@ class Pin: NSManagedObject {
 		self.relativePath = NSUUID().UUIDString
 	}
 
-	func directory(var version: Int? = nil) -> NSURL? {
-		if version == nil {
-			version = self.photosVersion
-		}
-		var url: NSURL? = Constant.documentDir.URLByAppendingPathComponent(self.relativePath + "-\(version!)")
+	func directory() -> NSURL? {
+		var url: NSURL? = Constant.documentDir.URLByAppendingPathComponent(self.relativePath)
 		do {
 			// Create the directory if it doesn't already exist (if it does exist, this will not throw an error):
 			try NSFileManager.defaultManager().createDirectoryAtURL(url!, withIntermediateDirectories: true, attributes: nil)
@@ -55,9 +52,12 @@ class Pin: NSManagedObject {
 		return url
 	}
 
-	func deleteDirectoryForVersion(version: Int) -> Bool {
-		guard let url = directory(version) else {
-			print("Unable to get directory URL for version \(version)")
+	/**
+	To be used when deleting a pin; removes the entire directory where photos are stored.
+	*/
+	func deleteDirectory() -> Bool {
+		guard let url = directory() else {
+			print("Unable to get directory for pin.")
 			return false
 		}
 		do {
