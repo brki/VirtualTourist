@@ -23,7 +23,14 @@ class SearchOperation: ConcurrentDownloadOperation {
 	var pin: Pin
 	let client = FlickrClient.sharedClient
 	var photosAdded = 0
-	var maxPhotos: Int
+	var maxPages: Int
+	var startPage: Int!
+	var endPage: Int!
+	var neededPages: Int!
+	var perPage: Int
+	var latitude: Double!
+	var longitude: Double!
+
 	var _pagesProcessed = 0
 	var pagesProcessed: Int {
 		get {
@@ -35,11 +42,33 @@ class SearchOperation: ConcurrentDownloadOperation {
 			objc_sync_exit(self)
 		}
 	}
+	var _highestProcessedPage = 0
 
-	init(pin: Pin, maxPhotos: Int) {
+	// Thread safe, only accepts new value if it is greater than the previously set value:
+	var highestProcessedPage: Int {
+		get {
+			return _highestProcessedPage
+		}
+		set {
+			objc_sync_enter(self)
+			if newValue > _highestProcessedPage {
+				_highestProcessedPage = newValue
+			}
+			objc_sync_exit(self)
+		}
+	}
+
+
+	init(pin: Pin, maxPages: Int, perPage: Int) {
 		self.pin = pin
-		self.maxPhotos = maxPhotos
+		self.maxPages = maxPages
+		self.perPage = perPage
 		super.init()
+		pin.managedObjectContext!.performBlockAndWait {
+			self.latitude = pin.latitude
+			self.longitude = pin.longitude
+			self.startPage = pin.lastPhotoPageProcessed + 1
+		}
 		self.errorDomain = "SearchOperation"
 	}
 
@@ -48,15 +77,20 @@ class SearchOperation: ConcurrentDownloadOperation {
 			if self.cancelled {
 				return
 			}
-			self.addPhotosToContext(searchResponse.photos)
-			self.pagesProcessed += 1
-			let responsePhotoCount = searchResponse.photos.count
-			if searchResponse.pages > 1 && self.maxPhotos > responsePhotoCount {
-				self.getMoreResponsePages(searchResponse)
-			} else {
-				// There are no photos, or no more pages of photos
+			guard searchResponse.total > 0 else {
+				// There are no photos
 				self.handleEndOfExecution()
+				return
 			}
+
+			// If a new collection has been requested, but there are no more available pages,
+			// then wrap back around to page 1.
+			if searchResponse.pages < self.startPage {
+				self.startPage = 1
+			}
+			self.endPage = min(searchResponse.pages, self.startPage + self.maxPages - 1)
+			self.neededPages = self.endPage - self.startPage + 1
+			self.getMoreResponsePages(searchResponse)
 		}
 		self.sessionTasks["1"] = firstPageTask
 	}
@@ -71,18 +105,10 @@ class SearchOperation: ConcurrentDownloadOperation {
 			return
 		}
 
-		let needed = maxPhotos - photosAdded
-		guard needed > 0 else {
-			return
-		}
-
-		let neededPages = Int(ceil(Float(needed) / Float(response.perpage)))
-		let availablePages = min(neededPages, response.pages - pagesProcessed)
-
-		for i in pagesProcessed + 1 ... pagesProcessed + availablePages {
+		for page in startPage ... endPage {
 			// Launch more URLSessionTasks using a concurrent queue.
 			self.concurrentQueue.addOperationWithBlock {
-				let task = self.fetchResultsPage(i) { searchResponse in
+				let task = self.fetchResultsPage(page) { searchResponse in
 
 					guard !self.cancelled && self.error == nil else {
 						return
@@ -90,29 +116,20 @@ class SearchOperation: ConcurrentDownloadOperation {
 
 					self.addPhotosToContext(searchResponse.photos)
 					self.pagesProcessed += 1
+					self.highestProcessedPage = page
 
-					if self.pagesProcessed == response.pages {
-						// There are no more pages.
+					if self.pagesProcessed == self.neededPages {
 						self.handleEndOfExecution()
-					} else if self.sessionTasks.count == 0 {
-						// If there are no more session tasks, and this code is running, we need still more photos.
-						// This can happen if, for example, the same photo information existed in the first and
-						// second pages of the results.
-						self.getMoreResponsePages(searchResponse)
 					}
 				}
-				self.sessionTasks[String(i)] = task
+				self.sessionTasks[String(page)] = task
 			}
 		}
 	}
 
 	func addPhotosToContext(photos: [FlickrPhoto]) {
 		for photo in photos {
-			guard addPhoto(photo) else {
-				// The maximum number of photos has been processed.  The operation has accomplished it's goal.
-				handleEndOfExecution()
-				return
-			}
+			addPhoto(photo)
 		}
 	}
 
@@ -121,31 +138,20 @@ class SearchOperation: ConcurrentDownloadOperation {
 
 	This is a thread safe method.
 	*/
-	func addPhoto(photo: FlickrPhoto) -> Bool {
-		var wasAdded = false
+	func addPhoto(photo: FlickrPhoto) {
 		objc_sync_enter(self)
 		defer {
 			objc_sync_exit(self)
 		}
-		if photosAdded < maxPhotos {
-			let context = pin.managedObjectContext!
-			context.performBlockAndWait {
-				let _ = Photo(pin: self.pin, photo: photo, order: self.photosAdded, managedObjectContext: context)
-			}
-			photosAdded += 1
-			wasAdded = true
+		let context = pin.managedObjectContext!
+		context.performBlockAndWait {
+			let _ = Photo(pin: self.pin, photo: photo, order: self.photosAdded, managedObjectContext: context)
 		}
-		return wasAdded
+		photosAdded += 1
 	}
 
 	func fetchResultsPage(page: Int, successHandler: (FlickrPhotoSearchResponse) -> Void) -> NSURLSessionDataTask {
-		var latitude = 0.0
-		var longitude = 0.0
-		pin.managedObjectContext!.performBlockAndWait {
-			latitude = self.pin.latitude
-			longitude = self.pin.longitude
-		}
-		let task = client.searchLocation(page, latitude: latitude, longitude: longitude) { jsonObject, response, error in
+		let task = client.searchLocation(page, latitude: latitude, longitude: longitude, perPage: perPage) { jsonObject, response, error in
 			self.sessionTasks[String(page)] = nil
 
 			guard !self.cancelled && self.error == nil else {
@@ -196,6 +202,10 @@ class SearchOperation: ConcurrentDownloadOperation {
 		guard let pinContext = pin.managedObjectContext else {
 			error = makeNSError(ErrorCode.PinHasNoContext.rawValue, localizedDescription: "Data Storage error (pin is not associated with a context)")
 			return
+		}
+
+		pinContext.performBlock {
+			self.pin.lastPhotoPageProcessed = self.highestProcessedPage
 		}
 
 		CoreDataStack.saveContext(pinContext, includeParentContexts: true) { error, isChildContext in

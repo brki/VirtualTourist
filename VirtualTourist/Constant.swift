@@ -9,6 +9,7 @@
 import Foundation
 
 struct Constant {
-	static let MaxPhotosPerPin = 600
+	static let maxPhotoPagesPerCollection = 3
+	static let photosPerPage = 3
 	static let documentDir = try! NSFileManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true)
 }

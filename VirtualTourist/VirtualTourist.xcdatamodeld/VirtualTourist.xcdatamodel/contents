@@ -9,6 +9,7 @@
         <relationship name="pin" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="photos" inverseEntity="Pin" syncable="YES"/>
     </entity>
     <entity name="Pin" representedClassName=".Pin" syncable="YES">
+        <attribute name="lastPhotoPageProcessed" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
         <attribute name="latitude" attributeType="Double" defaultValueString="0.0" syncable="YES"/>
         <attribute name="longitude" attributeType="Double" defaultValueString="0.0" syncable="YES"/>
         <attribute name="photoProcessingState" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
@@ -18,6 +19,6 @@
     </entity>
     <elements>
         <element name="Photo" positionX="-54" positionY="-9" width="128" height="135"/>
-        <element name="Pin" positionX="-63" positionY="-18" width="128" height="135"/>
+        <element name="Pin" positionX="-63" positionY="-18" width="128" height="150"/>
     </elements>
 </model>

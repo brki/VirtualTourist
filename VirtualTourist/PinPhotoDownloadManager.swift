@@ -87,7 +87,7 @@ class PinPhotoDownloadManager {
 	to retrieve information about photos near the pin's geographical location.
 	*/
 	static func addSearchOperation(pin: Pin) -> ErrorAwareOperation {
-		let searchOperation = SearchOperation(pin: pin, maxPhotos: Constant.MaxPhotosPerPin)
+		let searchOperation = SearchOperation(pin: pin, maxPages: Constant.maxPhotoPagesPerCollection, perPage: Constant.photosPerPage)
 		searchOperation.downloadErrorHandler = { error in
 			handlePhotoProcessingError(pin,
 				state: Pin.PHOTO_PROCESSING_STATE_ERROR_WHILE_FETCHING_DATA,

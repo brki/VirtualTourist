@@ -18,6 +18,7 @@ extension Pin {
 	@NSManaged var longitude: Double
 	@NSManaged var relativePath: String
 	@NSManaged var photosVersion: Int
+	@NSManaged var lastPhotoPageProcessed: Int
 	@NSManaged var photos: NSSet
 
 	/**
