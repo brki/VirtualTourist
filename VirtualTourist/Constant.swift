@@ -11,5 +11,6 @@ import Foundation
 struct Constant {
 	static let maxPhotoPagesPerCollection = 3
 	static let photosPerPage = 3
+	static let maxFlickrGeoQueryResults = 4000
 	static let documentDir = try! NSFileManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true)
 }

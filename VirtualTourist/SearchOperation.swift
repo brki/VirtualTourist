@@ -84,10 +84,11 @@ class SearchOperation: ConcurrentDownloadOperation {
 			}
 
 			// If a new collection has been requested, but there are no more available pages,
-			// then wrap back around to page 1.
-			if searchResponse.pages < self.startPage {
+			// or if the geo-query maximum limit has been reached, wrap back around to page 1.
+			if searchResponse.pages < self.startPage || (self.startPage - 1) * self.perPage >= Constant.maxFlickrGeoQueryResults {
 				self.startPage = 1
 			}
+
 			self.endPage = min(searchResponse.pages, self.startPage + self.maxPages - 1)
 			self.neededPages = self.endPage - self.startPage + 1
 			self.getMoreResponsePages(searchResponse)
