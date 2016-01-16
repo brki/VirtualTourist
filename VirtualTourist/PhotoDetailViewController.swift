@@ -64,6 +64,10 @@ class PhotoDetailViewController: UIViewController {
 		UIApplication.sharedApplication().statusBarHidden = false
 	}
 
+	override func prefersStatusBarHidden() -> Bool {
+		return navigationController?.navigationBarHidden ?? false
+	}
+
 	/**
 	Hide / show the navigation and status bar in response to a single tap.
 	*/
