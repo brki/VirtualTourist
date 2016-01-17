@@ -29,11 +29,16 @@ to be able to declare dependencies between operations is quite nice, though.
 Two primary operations are used:
 
 * ``SearchOperation``: Gets the list of photos for a dropped pin's location from Flickr; this may involve several network
-  requests if there are several pages of results. As configured, it will try to fetch up to 600 results; Flickr limits
-  the geo-based queries to 250 results per page.
+  requests if there are several pages of results. For the purpose of this project, the Flickr results-per-page are
+  restricted to 5, and 3 pages of results are shown in the collection view.  This behaviour is there just an exercise
+  to use dependendent concurrent network connections.
 
-* ``DownloadFilesOperation``: Downloads all of the not-yet downloaded files that were retrieved by a ``SearchOperation``.
-  The downloading of individual files is done on a queue that allows a maximum of 5 concurrent operations.
+* ``DownloadFilesOperation``: Downloads all of the not-yet downloaded files that were retrieved by a ``SearchOperation``,
+  using ``DownloadSingleFileOperation``s.
+
+* ``DownloadSingleFileOperation``: Downloads a single file.  If the operation is cancelled, the file download
+  task will also be cancelled (if it's started).  The downloading of individual files is done on a queue that
+  allows a maximum of 5 concurrent operations.
 
 ``DownloadFilesOperation`` is made dependant on the ``SearchOperation``, so downloading files will not start
 until the full list of photos has been fetched.  Once the ``SearchOperation`` is complete, the correct number
